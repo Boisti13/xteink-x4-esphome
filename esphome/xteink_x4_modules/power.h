@@ -2,6 +2,13 @@
 
 #include <ctime>
 #include "driver/gpio.h"
+#include "esp_sleep.h"
+
+// True after flashing, reset or power-on; false after a wake from deep sleep
+// (timer or power button).
+inline bool xteink_cold_boot() {
+  return esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED;
+}
 
 // The X4 cuts its own power when the ESP32 goes into deep sleep unless the
 // power latch on GPIO13 is held. Hold it, don't drive it.

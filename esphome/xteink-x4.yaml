@@ -28,10 +28,29 @@ esphome:
   on_boot:
     priority: -100
     then:
-      - wait_until:
+      # After flashing or a reset: show a setup screen and wait up to
+      # 10 minutes, long enough to add the device to Home Assistant.
+      # After a wake from deep sleep: wait 30 s.
+      - if:
           condition:
-            api.connected:
-          timeout: 30s
+            lambda: "return xteink_cold_boot();"
+          then:
+            - globals.set:
+                id: setup_screen
+                value: "true"
+            - component.update: epaper_display
+            - wait_until:
+                condition:
+                  api.connected:
+                timeout: 10min
+            - globals.set:
+                id: setup_screen
+                value: "false"
+          else:
+            - wait_until:
+                condition:
+                  api.connected:
+                timeout: 30s
       # Without Home Assistant keep the last picture instead of drawing dashes
       - if:
           condition:
@@ -103,6 +122,13 @@ deep_sleep:
   wakeup_pin:
     number: GPIO3
     inverted: true
+
+globals:
+  # true while the "waiting for Home Assistant" screen is shown
+  - id: setup_screen
+    type: bool
+    restore_value: no
+    initial_value: "false"
 
 script:
   - id: go_to_sleep

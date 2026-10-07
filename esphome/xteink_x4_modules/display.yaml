@@ -36,6 +36,27 @@ display:
 
       auto rule = [&](int y) { it.line(M, y, W - M, y); };
 
+      // ---- Setup screen (after flashing, until Home Assistant connects) --
+      if (id(setup_screen)) {
+        it.print(M, 16, id(font_title), "Xteink X4");
+        rule(64);
+        it.print(M, 96, id(font_label), "Waiting for Home Assistant …");
+        const char *lines[] = {
+          "Add this device in Home Assistant:",
+          "Settings > Devices & services",
+          "> ESPHome, device \"xteink-x4\",",
+          "with the API key from secrets.yaml.",
+          "",
+          "It stays awake for 10 minutes,",
+          "then sleeps until the full hour.",
+          "Press the power button to try again.",
+        };
+        int ly = 150;
+        for (auto *l : lines) { it.print(M, ly, id(font_body), l); ly += 36; }
+        it.set_refresh_mode(1);
+        return;
+      }
+
       // One "HH:MM|name|dose" list (medicine or supplements); returns the next y
       auto section_list = [&](int y, esphome::image::Image *icon, const char *title,
                               esphome::text_sensor::TextSensor *count,
