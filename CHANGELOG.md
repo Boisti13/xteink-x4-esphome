@@ -7,6 +7,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ### Added
 - **Sprout Track dashboard**: the page now shows how long the baby has been awake or asleep (and since when), the last diaper (how long ago, time, wet/dirty), wet and dirty diapers today, and every medicine and supplement dose today with time, name and amount.
 - **Deep sleep**: the X4 wakes on every full hour, draws the page once and sleeps again — about a week on one charge. The power button wakes it at once.
+- **Quiet hours**: no wakes from 23:00 to 6:00 — the last page of the day is drawn at 22:00, the next at 6:00. Set with `quiet_start` / `quiet_end` in `esphome/xteink-x4.yaml`.
 - **Keep awake** switch (`input_boolean.xteink_x4_keep_awake`) for OTA updates; switching it off sends the device straight back to sleep.
 - Material Design icons on the page; fonts with umlauts and typographic punctuation.
 - README: install steps for the Sprout Track secrets, entity table, battery life, a preview of the page.
@@ -21,7 +22,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 - The message line (`input_text.xteink_x4_message`).
 
 ### Under the hood
-- `xteink_x4_modules/power.h` holds the power latch (GPIO13) through deep sleep and works out the time to the next full hour.
+- `xteink_x4_modules/power.h` holds the power latch (GPIO13) through deep sleep and works out the time to the next wake, skipping the quiet hours.
 - `safe_mode: boot_is_good_after: 10s`, so short wakes don't end in safe mode.
 - Images use the `platform: file` syntax; the ignored `platformio_options` are gone.
 

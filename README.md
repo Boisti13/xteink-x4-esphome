@@ -12,7 +12,7 @@ a glance: how long the baby has been awake (or asleep), when the last diaper
 was changed, how many were wet or dirty today, and which medicine and
 supplements were given when. [Home Assistant](https://www.home-assistant.io/)
 fetches the data; the X4 runs [ESPHome](https://esphome.io/), wakes once an
-hour, draws the page and sleeps again — about a week on one charge.
+hour during the day, draws the page and sleeps again — about a week on one charge.
 
 <p align="center"><img src="docs/preview.png" alt="The dashboard page" width="320"></p>
 
@@ -21,7 +21,7 @@ hour, draws the page and sleeps again — about a week on one charge.
 - **Awake for / asleep for** with the time it started — at a glance whether a nap is due
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
 - **Medicine and supplements today**: every dose with time, name and amount, and how many — so nobody gives a second dose by mistake
-- **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; the **power button** wakes it for a fresh page at any time
+- **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
 - **Keep awake** switch in Home Assistant for OTA updates; the picture stays as it is when Home Assistant can't be reached
 - E-paper keeps the last page without power; half refresh, so no ghosting
@@ -31,7 +31,7 @@ hour, draws the page and sleeps again — about a week on one charge.
 ```
 Sprout Track API                 Home Assistant                       Xteink X4 (ESPHome)
 /status          ──every 60 s──▶  packages/xteink_x4.yaml              wakes every full hour
-/activities?type=medicine         sensor.xteink_x4_sleep      ──API──▶  or on the power button,
+/activities?type=medicine         sensor.xteink_x4_sleep      ──API──▶  (not 23–6) or on the button,
 /activities?type=supplement       sensor.xteink_x4_diaper               draws the page once,
                                   sensor.xteink_x4_medicine             sleeps again
                                   sensor.xteink_x4_supplements
@@ -40,6 +40,10 @@ Sprout Track API                 Home Assistant                       Xteink X4 
 Home Assistant does all the work — it polls Sprout Track, picks out today's
 entries, formats times and durations — so the device only prints ready-made
 text. A wake takes about 10 seconds.
+
+The last wake of the day is at 22:00, the first at 6:00. Change the quiet
+hours with `quiet_start` and `quiet_end` at the top of
+`esphome/xteink-x4.yaml` (same value twice = every hour, day and night).
 
 Because the page is drawn once an hour, *awake for 0:56* is as of the time in
 the footer (*Updated 20:46*). Press the power button for a fresh one.
@@ -124,7 +128,7 @@ so on its 650 mAh battery:
 
 | Wakes | Lasts about |
 |---|---|
-| every hour (this config) | a week |
+| every hour, 6:00–22:00 (this config) | a week |
 | every 10 minutes | 4 days |
 | every minute | 1 day |
 
@@ -169,7 +173,7 @@ esphome/
     sensors.yaml              # battery, Wi-Fi
     text_sensors.yaml         # values from Home Assistant
     binary_sensors.yaml       # seven buttons, keep awake
-    power.h                   # power latch, time to the next full hour
+    power.h                   # power latch, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
 docs/
