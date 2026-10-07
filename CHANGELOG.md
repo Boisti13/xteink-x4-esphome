@@ -4,6 +4,8 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+## v0.2.0 — 2026-10-07
+
 ### Added
 - **Sprout Track dashboard**: the page now shows how long the baby has been awake or asleep (and since when), the last diaper (how long ago, time, wet/dirty), wet and dirty diapers today, and every medicine and supplement dose today with time, name and amount.
 - **Deep sleep**: the X4 wakes on every full hour, draws the page once and sleeps again — about a week on one charge. The power button wakes it at once.

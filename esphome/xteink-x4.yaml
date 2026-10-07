@@ -26,7 +26,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: boisti13.xteink-x4-esphome
-    version: "0.2.0-dev"
+    version: "0.2.0"
   # The display driver includes <SPI.h> from the Arduino core
   libraries:
     - SPI
