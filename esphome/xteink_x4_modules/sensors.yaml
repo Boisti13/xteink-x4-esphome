@@ -10,3 +10,23 @@ sensor:
     id: wifi_rssi
     name: "Wi-Fi signal"
     update_interval: 60s
+
+  # How long each wake takes: until Home Assistant was connected, and in
+  # total until deep sleep. Published right before going to sleep.
+  - platform: template
+    id: wake_connected
+    name: "Wake: connected after"
+    unit_of_measurement: s
+    accuracy_decimals: 1
+    entity_category: diagnostic
+    icon: mdi:timer-outline
+    update_interval: never
+  - platform: template
+    id: wake_total
+    name: "Wake: total"
+    unit_of_measurement: s
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+    icon: mdi:timer-sand
+    update_interval: never

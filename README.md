@@ -117,6 +117,7 @@ the device goes back to sleep at once.
 "Today" is since midnight in Home Assistant's time zone.
 
 **From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_wi_fi_signal`,
+`sensor.xteink_x4_wake_connected_after` and `sensor.xteink_x4_wake_total` (seconds per wake),
 and the seven buttons as `binary_sensor.xteink_x4_button_1` … `_button_4`,
 `_button_up`, `_button_down`, `_power_button` (only while it's awake).
 

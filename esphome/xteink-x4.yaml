@@ -55,6 +55,7 @@ esphome:
                 condition:
                   api.connected:
                 timeout: 30s
+      - lambda: "id(connected_ms) = millis();"
       # Without Home Assistant keep the last picture instead of drawing dashes
       - if:
           condition:
@@ -66,13 +67,14 @@ esphome:
                     return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
                            id(ha_medicine).has_state() && id(ha_supplements).has_state();
                 timeout: 10s
-            - delay: 1s
+            # Attributes arrive in the same burst as the states
+            - delay: 200ms
+            # Blocks until the panel has finished refreshing
             - component.update: epaper_display
           else:
             - logger.log:
                 level: WARN
                 format: "No connection to Home Assistant, keeping the old picture"
-      - delay: 2s
       - script.execute: go_to_sleep
 
 esp32:
@@ -133,6 +135,12 @@ globals:
     type: bool
     restore_value: no
     initial_value: "false"
+  # millis() when Home Assistant had connected (or gave up), for the
+  # "Wake: connected after" sensor
+  - id: connected_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
 
 script:
   - id: go_to_sleep
@@ -144,6 +152,15 @@ script:
           then:
             - logger.log: "Keep awake is on, staying awake"
           else:
+            # Report how long this wake took, then give the API a moment to
+            # send it
+            - sensor.template.publish:
+                id: wake_connected
+                state: !lambda "return id(connected_ms) / 1000.0f;"
+            - sensor.template.publish:
+                id: wake_total
+                state: !lambda "return millis() / 1000.0f;"
+            - delay: 300ms
             - lambda: xteink_hold_power_latch();
             - deep_sleep.enter:
                 id: deep_sleep_ctrl
