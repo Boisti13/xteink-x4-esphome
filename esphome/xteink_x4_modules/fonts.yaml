@@ -1,0 +1,10 @@
+font:
+  - file: "gfonts://Roboto@700"
+    id: font_title
+    size: 40
+  - file: "gfonts://Roboto"
+    id: font_body
+    size: 28
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 20

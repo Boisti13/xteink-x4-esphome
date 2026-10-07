@@ -1,0 +1,10 @@
+# ESPHome build output
+.esphome/
+esphome/.esphome/
+
+# Secrets — never commit
+secrets.yaml
+esphome/secrets.yaml
+
+# Flash backups
+*.bin

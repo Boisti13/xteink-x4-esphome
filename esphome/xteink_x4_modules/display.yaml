@@ -1,0 +1,38 @@
+# 4.26" 800×480 GDEQ0426T82 panel, SSD1677 controller.
+# Rotation 270 = portrait (480 wide, 800 high), buttons at the bottom.
+display:
+  - platform: xteink_edp
+    id: epaper_display
+    rotation: 270
+    update_interval: ${refresh_interval}
+    lambda: |-
+      const int W = it.get_width();
+
+      // Header: date line from HA, clock from HA time
+      std::string header = id(ha_header).has_state() ? id(ha_header).state : "…";
+      it.print(24, 24, id(font_title), header.c_str());
+      auto now = id(ha_time).now();
+      if (now.is_valid()) {
+        it.strftime(W - 24, 32, id(font_body), TextAlign::TOP_RIGHT, "%H:%M", now);
+      }
+      it.line(24, 80, W - 24, 80);
+
+      // Message from input_text.xteink_x4_message
+      std::string msg = id(ha_message).has_state() ? id(ha_message).state : "";
+      if (msg.empty() || msg == "unknown" || msg == "unavailable") {
+        msg = "No message";
+      }
+      it.print(24, 104, id(font_body), msg.c_str());
+
+      // Footer: battery and Wi-Fi
+      const int H = it.get_height();
+      it.line(24, H - 56, W - 24, H - 56);
+      if (id(battery_level).has_state()) {
+        it.printf(24, H - 44, id(font_small), "Battery %.0f%%", id(battery_level).state);
+      }
+      if (id(wifi_rssi).has_state()) {
+        it.printf(W - 24, H - 44, id(font_small), TextAlign::TOP_RIGHT, "Wi-Fi %.0f dBm", id(wifi_rssi).state);
+      }
+
+      // Half refresh: clean picture, ~1.7 s
+      it.set_refresh_mode(1);

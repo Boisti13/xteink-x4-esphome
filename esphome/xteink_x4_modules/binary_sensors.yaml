@@ -1,0 +1,28 @@
+# Buttons. The four front buttons are 1–4 (a resistor ladder on GPIO1),
+# the side buttons up/down (GPIO2), power on GPIO3.
+binary_sensor:
+  - platform: xteink_input
+    button_1:
+      id: btn_1
+      name: "Button 1"
+    button_2:
+      id: btn_2
+      name: "Button 2"
+    button_3:
+      id: btn_3
+      name: "Button 3"
+    button_4:
+      id: btn_4
+      name: "Button 4"
+    button_up:
+      id: btn_up
+      name: "Button up"
+    button_down:
+      id: btn_down
+      name: "Button down"
+    button_pwr:
+      id: btn_pwr
+      name: "Power button"
+      # A short press redraws the page
+      on_click:
+        - component.update: epaper_display

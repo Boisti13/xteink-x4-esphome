@@ -1,0 +1,14 @@
+# Entities from packages/xteink_x4.yaml in Home Assistant.
+# A change redraws the page.
+text_sensor:
+  - platform: homeassistant
+    id: ha_header
+    entity_id: sensor.xteink_x4_header
+    on_value:
+      - component.update: epaper_display
+
+  - platform: homeassistant
+    id: ha_message
+    entity_id: input_text.xteink_x4_message
+    on_value:
+      - component.update: epaper_display

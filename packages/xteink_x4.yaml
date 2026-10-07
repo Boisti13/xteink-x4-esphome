@@ -1,0 +1,26 @@
+###############################################################################
+# Xteink X4 e-paper display
+# https://github.com/Boisti13/xteink-x4-esphome
+#
+# Everything Home Assistant needs for the display lives in this one package.
+# The device reads these entities (esphome/xteink_x4_modules/text_sensors.yaml).
+###############################################################################
+
+###############################################################################
+# Message line — set it from the UI, a script or an automation
+###############################################################################
+input_text:
+  xteink_x4_message:
+    name: Xteink X4 Message
+    max: 255
+    icon: mdi:message-text
+
+###############################################################################
+# Header — weekday and date, e.g. "Wed, 7 Oct"
+###############################################################################
+template:
+  - sensor:
+      - name: "Xteink X4 Header"
+        unique_id: xteink_x4_header
+        icon: mdi:calendar-today
+        state: "{{ now().strftime('%a, %-d %b') }}"

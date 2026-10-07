@@ -1,0 +1,12 @@
+sensor:
+  # Battery from GPIO0 (divider ×2), LiPo curve → percent
+  - platform: xteink_battery
+    update_interval: 60s
+    battery_level:
+      id: battery_level
+      name: "Battery"
+
+  - platform: wifi_signal
+    id: wifi_rssi
+    name: "Wi-Fi signal"
+    update_interval: 60s
