@@ -9,6 +9,8 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 - **Deep sleep**: the X4 wakes on every full hour, draws the page once and sleeps again — about a week on one charge. The power button wakes it at once.
 - **Quiet hours**: no wakes from 23:00 to 6:00 — the last page of the day is drawn at 22:00, the next at 6:00. Set with `quiet_start` / `quiet_end` in `esphome/xteink-x4.yaml`.
 - **Keep awake** switch (`input_boolean.xteink_x4_keep_awake`) for OTA updates; switching it off sends the device straight back to sleep. The same switch also sits on the X4's device page (*Keep awake*, under Configuration) while it's awake.
+- **Battery and charging in the footer**: *Battery 87 %*, *charging* while USB is plugged in (GPIO20, also as `binary_sensor.xteink_x4_usb_power`), *plugged in, full* at 100 %.
+- **Low battery warning**: at 15 % or less, without USB, the footer turns into a black *Battery 14 % – please charge* bar. Set the level with `battery_warning` in `esphome/xteink-x4.yaml`.
 - **Wake time sensors** *Wake: connected after* and *Wake: total* (seconds), sent right before each sleep — to see where the battery goes.
 - Material Design icons on the page; fonts with umlauts and typographic punctuation.
 - README: install steps for the Sprout Track secrets, entity table, battery life, a preview of the page.
@@ -25,6 +27,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ### Under the hood
 - `xteink_x4_modules/power.h` holds the power latch (GPIO13) through deep sleep and works out the time to the next wake, skipping the quiet hours.
 - **Fixed IP address** (`xteink_x4_ip`, `_gateway`, `_subnet` in `secrets.yaml`): no DHCP on every wake. Reserve the address on the router as well.
+- A wake up to 10 minutes before the hour counts for that hour: the sleep timer runs about 1 % fast, so the night's sleep ended around 5:56 and was followed by an extra wake at 6:00.
 - Shorter wakes: the fixed 1 s pause before drawing and 2 s pause after it are gone (the refresh itself blocks until the panel is done).
 - `safe_mode: boot_is_good_after: 10s`, so short wakes don't end in safe mode.
 - Images use the `platform: file` syntax; the ignored `platformio_options` are gone.

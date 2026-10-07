@@ -27,6 +27,17 @@ binary_sensor:
       on_click:
         - component.update: epaper_display
 
+  # USB plugged in (GPIO20 is high while USB powers the X4, as CrossPoint
+  # reads it). Below 100 % that means charging.
+  - platform: gpio
+    id: usb_power
+    name: "USB power"
+    device_class: plug
+    entity_category: diagnostic
+    pin:
+      number: GPIO20
+      mode: INPUT
+
   # input_boolean.xteink_x4_keep_awake: on = stay awake (OTA, testing).
   # Turning it off sends the device back to sleep.
   - platform: homeassistant

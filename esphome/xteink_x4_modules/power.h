@@ -35,8 +35,9 @@ inline uint32_t xteink_ms_to_next_wake(const esphome::ESPTime &now, int quiet_st
     return 3600UL * 1000UL;
   uint32_t secs = 3600 - (now.minute * 60 + now.second) + 5;
   int hour = (now.hour + 1) % 24;
-  // Woke a little early (the sleep timer drifts): skip to the hour after
-  if (secs < 120) {
+  // Woke a little early (the sleep timer runs ~1 % fast, so a night's sleep
+  // ends a few minutes early): that wake counts for the coming hour
+  if (secs < 600) {
     secs += 3600;
     hour = (hour + 1) % 24;
   }

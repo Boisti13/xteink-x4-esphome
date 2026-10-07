@@ -23,6 +23,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 - **Medicine and supplements today**: every dose with time, name and amount, and how many — so nobody gives a second dose by mistake
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
+- **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
 - **Keep awake** switch in Home Assistant for OTA updates; the picture stays as it is when Home Assistant can't be reached
 - E-paper keeps the last page without power; half refresh, so no ghosting
 
@@ -44,6 +45,12 @@ text. A wake takes about 10 seconds.
 The last wake of the day is at 22:00, the first at 6:00. Change the quiet
 hours with `quiet_start` and `quiet_end` at the top of
 `esphome/xteink-x4.yaml` (same value twice = every hour, day and night).
+
+The footer shows when the page was drawn, the battery level and whether
+it's charging. When the battery is low and USB isn't plugged in, it turns
+into a black bar:
+
+<p align="center"><img src="docs/footer-states.png" alt="Footer: normal, charging, battery low" width="360"></p>
 
 Because the page is drawn once an hour, *awake for 0:56* is as of the time in
 the footer (*Updated 20:46*). Press the power button for a fresh one.
@@ -118,6 +125,7 @@ the device goes back to sleep at once.
 
 **From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_wi_fi_signal`,
 `sensor.xteink_x4_wake_connected_after` and `sensor.xteink_x4_wake_total` (seconds per wake),
+`binary_sensor.xteink_x4_usb_power` (on while USB is plugged in),
 and the seven buttons as `binary_sensor.xteink_x4_button_1` … `_button_4`,
 `_button_up`, `_button_down`, `_power_button` (only while it's awake).
 
@@ -140,7 +148,7 @@ so on its 650 mAh battery:
 | SoC | ESP32-C3, 400 KB SRAM, no PSRAM, 16 MB flash |
 | Display | 4.26" 800×480 GDEQ0426T82, SSD1677 — SPI: SCLK 8, MOSI 10, CS 21, DC 4, RST 5, BUSY 6 |
 | Buttons | power GPIO3 (active low, also the wake pin); front buttons on a resistor ladder at GPIO1, side buttons at GPIO2 |
-| Battery | 650 mAh LiPo, voltage on GPIO0 through a 1:2 divider; charging detect GPIO20 |
+| Battery | 650 mAh LiPo, voltage on GPIO0 through a 1:2 divider; GPIO20 is high while USB is plugged in |
 | Power latch | GPIO13 — held through deep sleep, otherwise the X4 switches itself off |
 | Other | microSD on the same SPI bus (CS 12, MISO 7) |
 
@@ -179,7 +187,7 @@ esphome/
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
 docs/
-  preview.png
+  preview.png / footer-states.png
 ```
 
 ## Development

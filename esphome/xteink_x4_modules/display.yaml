@@ -144,15 +144,36 @@ display:
       rule(y);
       section_list(y + 16, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
 
-      // ---- Footer -----------------------------------------------------
-      rule(H - 44);
+      // ---- Footer: last update, battery and charging; a black bar when
+      // the battery is low and USB isn't plugged in ----------------------
       auto now = id(ha_time).now();
       char updated[8] = "--:--";
       if (now.is_valid()) now.strftime(updated, sizeof(updated), "%H:%M");
-      if (id(battery_level).has_state()) {
-        it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s  ·  Battery %.0f%%", updated, id(battery_level).state);
+      bool has_battery = id(battery_level).has_state();
+      float battery = has_battery ? id(battery_level).state : 100.0f;
+      bool usb = id(usb_power).state;
+      if (has_battery && battery <= ${battery_warning} && !usb) {
+        it.filled_rectangle(0, H - 64, W, 64);
+        it.image(M, H - 50, id(icon_battery_low), COLOR_OFF);
+        it.printf(M + 44, H - 54, id(font_label), COLOR_OFF, "Battery %.0f%% – please charge", battery);
+        it.printf(M + 44, H - 26, id(font_small), COLOR_OFF, "Updated %s", updated);
       } else {
-        it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s", updated);
+        rule(H - 44);
+        std::string power;
+        if (has_battery) {
+          char b[16];
+          snprintf(b, sizeof(b), "Battery %.0f%%", battery);
+          power = b;
+        }
+        if (usb) {
+          const char *state = (has_battery && battery >= 100.0f) ? "plugged in, full" : "charging";
+          power = power.empty() ? state : power + " " + state;
+        }
+        if (power.empty()) {
+          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s", updated);
+        } else {
+          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s  ·  %s", updated, power.c_str());
+        }
       }
 
       // Half refresh: clean picture, no ghosting

@@ -42,3 +42,9 @@ image:
     resize: 40x40
     type: BINARY
     transparency: chroma_key
+  - platform: file
+    file: mdi:battery-alert-variant-outline
+    id: icon_battery_low
+    resize: 36x36
+    type: BINARY
+    transparency: chroma_key

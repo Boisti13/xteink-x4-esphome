@@ -17,6 +17,9 @@ substitutions:
   # button still wakes it. Same value twice = wake every hour, day and night.
   quiet_start: "23"
   quiet_end: "6"
+  # At or below this battery level (%) the footer turns into a black
+  # "please charge" bar
+  battery_warning: "15"
 
 esphome:
   name: ${name}
