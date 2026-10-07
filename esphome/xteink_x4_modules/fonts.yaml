@@ -1,10 +1,22 @@
+# GF_Latin_Core covers umlauts and typographic punctuation (·, –) in names.
 font:
   - file: "gfonts://Roboto@700"
+    id: font_big
+    size: 64
+    glyphsets: [GF_Latin_Core]
+  - file: "gfonts://Roboto@700"
     id: font_title
-    size: 40
+    size: 32
+    glyphsets: [GF_Latin_Core]
+  - file: "gfonts://Roboto@700"
+    id: font_label
+    size: 24
+    glyphsets: [GF_Latin_Core]
   - file: "gfonts://Roboto"
     id: font_body
-    size: 28
+    size: 26
+    glyphsets: [GF_Latin_Core]
   - file: "gfonts://Roboto"
     id: font_small
     size: 20
+    glyphsets: [GF_Latin_Core]

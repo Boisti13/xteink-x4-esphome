@@ -1,26 +1,183 @@
 ###############################################################################
-# Xteink X4 e-paper display
+# Xteink X4 — Sprout Track baby dashboard
 # https://github.com/Boisti13/xteink-x4-esphome
 #
 # Everything Home Assistant needs for the display lives in this one package.
-# The device reads these entities (esphome/xteink_x4_modules/text_sensors.yaml).
+# It polls the Sprout Track API and turns the answers into display-ready
+# sensors; the device reads them (esphome/xteink_x4_modules/text_sensors.yaml).
+#
+# Needs in /config/secrets.yaml (see README → Install):
+#   sprout_track_auth:           "Bearer st_live_…"
+#   sprout_track_status_url:     "http://<host>:3000/api/hooks/v1/babies/<baby-id>/status"
+#   sprout_track_medicine_url:   "…/babies/<baby-id>/activities?type=medicine&limit=20"
+#   sprout_track_supplement_url: "…/babies/<baby-id>/activities?type=supplement&limit=20"
 ###############################################################################
 
 ###############################################################################
-# Message line — set it from the UI, a script or an automation
+# Raw data from Sprout Track (every minute)
 ###############################################################################
-input_text:
-  xteink_x4_message:
-    name: Xteink X4 Message
-    max: 255
-    icon: mdi:message-text
+rest:
+  - resource: !secret sprout_track_status_url
+    headers:
+      Authorization: !secret sprout_track_auth
+    scan_interval: 60
+    sensor:
+      - name: "Xteink X4 Sprout Status"
+        unique_id: xteink_x4_sprout_status
+        icon: mdi:baby-face-outline
+        value_template: "{{ value_json.meta.timestamp }}"
+        json_attributes_path: "$.data"
+        json_attributes:
+          - baby
+          - lastActivities
+          - dailyCounts
+
+  - resource: !secret sprout_track_medicine_url
+    headers:
+      Authorization: !secret sprout_track_auth
+    scan_interval: 60
+    sensor:
+      - name: "Xteink X4 Sprout Medicine"
+        unique_id: xteink_x4_sprout_medicine
+        icon: mdi:pill
+        value_template: "{{ value_json.data.count }}"
+        json_attributes_path: "$.data"
+        json_attributes:
+          - activities
+
+  - resource: !secret sprout_track_supplement_url
+    headers:
+      Authorization: !secret sprout_track_auth
+    scan_interval: 60
+    sensor:
+      - name: "Xteink X4 Sprout Supplements"
+        unique_id: xteink_x4_sprout_supplements
+        icon: mdi:eyedropper
+        value_template: "{{ value_json.data.count }}"
+        json_attributes_path: "$.data"
+        json_attributes:
+          - activities
 
 ###############################################################################
-# Header — weekday and date, e.g. "Wed, 7 Oct"
+# Keep the display awake (for OTA updates and testing)
+###############################################################################
+input_boolean:
+  xteink_x4_keep_awake:
+    name: Xteink X4 Keep awake
+    icon: mdi:sleep-off
+
+###############################################################################
+# Display-ready values. Times are local, durations H:MM.
+# Counts and lists cover today since midnight.
 ###############################################################################
 template:
   - sensor:
+      # "Arthur · Wed, 7 Oct"
       - name: "Xteink X4 Header"
         unique_id: xteink_x4_header
         icon: mdi:calendar-today
-        state: "{{ now().strftime('%a, %-d %b') }}"
+        state: >
+          {% set baby = state_attr('sensor.xteink_x4_sprout_status', 'baby') or {} %}
+          {% set name = baby.get('firstName', '') %}
+          {{ (name ~ ' · ' if name else '') ~ now().strftime('%a, %-d %b') }}
+
+      # State: time awake (or asleep) as H:MM. Attributes: label, since.
+      - name: "Xteink X4 Sleep"
+        unique_id: xteink_x4_sleep
+        icon: mdi:sleep
+        availability: "{{ has_value('sensor.xteink_x4_sprout_status') }}"
+        state: >
+          {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+          {% set s = last.get('sleep') %}
+          {% set t = (s.startTime if s.isActive else s.endTime) if s else none %}
+          {% if t %}
+            {% set mins = ((now() - as_datetime(t)).total_seconds() // 60) | int %}
+            {{ '%d:%02d' | format(mins // 60, mins % 60) }}
+          {% else %}
+            –
+          {% endif %}
+        attributes:
+          label: >
+            {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+            {% set s = last.get('sleep') %}
+            {{ 'Asleep for' if s and s.isActive else 'Awake for' }}
+          since: >
+            {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+            {% set s = last.get('sleep') %}
+            {% set t = (s.startTime if s.isActive else s.endTime) if s else none %}
+            {{ (as_datetime(t) | as_local).strftime('%H:%M') if t else '' }}
+
+      # State: time since the last diaper as H:MM.
+      # Attributes: time, type, wet and dirty today (BOTH counts in both).
+      - name: "Xteink X4 Diaper"
+        unique_id: xteink_x4_diaper
+        icon: mdi:human-baby-changing-table
+        availability: "{{ has_value('sensor.xteink_x4_sprout_status') }}"
+        state: >
+          {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+          {% set d = last.get('diaper') %}
+          {% if d %}
+            {% set mins = ((now() - as_datetime(d.time)).total_seconds() // 60) | int %}
+            {{ '%d:%02d' | format(mins // 60, mins % 60) }}
+          {% else %}
+            –
+          {% endif %}
+        attributes:
+          time: >
+            {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+            {% set d = last.get('diaper') %}
+            {{ (as_datetime(d.time) | as_local).strftime('%H:%M') if d else '' }}
+          type: >
+            {% set last = state_attr('sensor.xteink_x4_sprout_status', 'lastActivities') or {} %}
+            {% set d = last.get('diaper') %}
+            {{ {'WET': 'wet', 'DIRTY': 'dirty', 'BOTH': 'wet + dirty'}.get(d.type, '') if d else '' }}
+          wet: >
+            {% set c = (state_attr('sensor.xteink_x4_sprout_status', 'dailyCounts') or {}).get('diapersByType', {}) %}
+            {{ c.get('WET', 0) + c.get('BOTH', 0) }}
+          dirty: >
+            {% set c = (state_attr('sensor.xteink_x4_sprout_status', 'dailyCounts') or {}).get('diapersByType', {}) %}
+            {{ c.get('DIRTY', 0) + c.get('BOTH', 0) }}
+
+      # State: doses today. Attribute lines: newest first, one per line,
+      # "HH:MM|name|dose".
+      - name: "Xteink X4 Medicine"
+        unique_id: xteink_x4_medicine
+        icon: mdi:pill
+        availability: "{{ has_value('sensor.xteink_x4_sprout_medicine') }}"
+        state: >
+          {% set acts = state_attr('sensor.xteink_x4_sprout_medicine', 'activities') or [] %}
+          {{ acts | selectattr('time', 'defined')
+                  | map(attribute='time') | map('as_datetime') | map('as_local')
+                  | select('ge', today_at()) | list | count }}
+        attributes:
+          lines: >
+            {% set acts = state_attr('sensor.xteink_x4_sprout_medicine', 'activities') or [] %}
+            {% set ns = namespace(lines=[]) %}
+            {% for a in acts if (as_datetime(a.time) | as_local) >= today_at() %}
+              {% set d = a.details %}
+              {% set u = (d.unitAbbr or '') | lower %}
+              {% if d.doseAmount != 1 and u in ['pill', 'drop'] %}{% set u = u ~ 's' %}{% endif %}
+              {% set ns.lines = ns.lines + [(as_datetime(a.time) | as_local).strftime('%H:%M') ~ '|' ~ d.medicineName ~ '|' ~ (d.doseAmount | string) ~ ' ' ~ u] %}
+            {% endfor %}
+            {{ ns.lines | join('\n') }}
+
+      - name: "Xteink X4 Supplements"
+        unique_id: xteink_x4_supplements
+        icon: mdi:eyedropper
+        availability: "{{ has_value('sensor.xteink_x4_sprout_supplements') }}"
+        state: >
+          {% set acts = state_attr('sensor.xteink_x4_sprout_supplements', 'activities') or [] %}
+          {{ acts | selectattr('time', 'defined')
+                  | map(attribute='time') | map('as_datetime') | map('as_local')
+                  | select('ge', today_at()) | list | count }}
+        attributes:
+          lines: >
+            {% set acts = state_attr('sensor.xteink_x4_sprout_supplements', 'activities') or [] %}
+            {% set ns = namespace(lines=[]) %}
+            {% for a in acts if (as_datetime(a.time) | as_local) >= today_at() %}
+              {% set d = a.details %}
+              {% set u = (d.unitAbbr or '') | lower %}
+              {% if d.doseAmount != 1 and u in ['pill', 'drop'] %}{% set u = u ~ 's' %}{% endif %}
+              {% set ns.lines = ns.lines + [(as_datetime(a.time) | as_local).strftime('%H:%M') ~ '|' ~ d.supplementName ~ '|' ~ (d.doseAmount | string) ~ ' ' ~ u] %}
+            {% endfor %}
+            {{ ns.lines | join('\n') }}

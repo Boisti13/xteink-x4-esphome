@@ -23,6 +23,19 @@ binary_sensor:
     button_pwr:
       id: btn_pwr
       name: "Power button"
-      # A short press redraws the page
+      # While awake, a short press redraws the page
       on_click:
         - component.update: epaper_display
+
+  # input_boolean.xteink_x4_keep_awake: on = stay awake (OTA, testing).
+  # Turning it off sends the device back to sleep.
+  - platform: homeassistant
+    id: keep_awake
+    entity_id: input_boolean.xteink_x4_keep_awake
+    # on_state skips the initial state, so this only fires on a real switch-off
+    on_state:
+      - if:
+          condition:
+            lambda: "return !x;"
+          then:
+            - script.execute: go_to_sleep

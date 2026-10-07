@@ -1,38 +1,138 @@
 # 4.26" 800×480 GDEQ0426T82 panel, SSD1677 controller.
-# Rotation 270 = portrait (480 wide, 800 high), buttons at the bottom.
+# Rotation 270 = portrait, 480 wide and 800 high.
+# Drawn once per wake (esphome/xteink-x4.yaml → on_boot) and on a press of
+# the power button while awake — not on a timer.
 display:
   - platform: xteink_edp
     id: epaper_display
     rotation: 270
-    update_interval: ${refresh_interval}
+    update_interval: never
     lambda: |-
       const int W = it.get_width();
-
-      // Header: date line from HA, clock from HA time
-      std::string header = id(ha_header).has_state() ? id(ha_header).state : "…";
-      it.print(24, 24, id(font_title), header.c_str());
-      auto now = id(ha_time).now();
-      if (now.is_valid()) {
-        it.strftime(W - 24, 32, id(font_body), TextAlign::TOP_RIGHT, "%H:%M", now);
-      }
-      it.line(24, 80, W - 24, 80);
-
-      // Message from input_text.xteink_x4_message
-      std::string msg = id(ha_message).has_state() ? id(ha_message).state : "";
-      if (msg.empty() || msg == "unknown" || msg == "unavailable") {
-        msg = "No message";
-      }
-      it.print(24, 104, id(font_body), msg.c_str());
-
-      // Footer: battery and Wi-Fi
       const int H = it.get_height();
-      it.line(24, H - 56, W - 24, H - 56);
-      if (id(battery_level).has_state()) {
-        it.printf(24, H - 44, id(font_small), "Battery %.0f%%", id(battery_level).state);
+      const int M = 20;  // side margin
+      const int TEXT_X = M + 72;  // text right of a section icon
+
+      auto val = [](esphome::text_sensor::TextSensor *s) -> std::string {
+        if (!s->has_state()) return "";
+        const std::string &v = s->state;
+        return (v == "unknown" || v == "unavailable") ? "" : v;
+      };
+      auto or_dash = [](const std::string &s) -> std::string { return s.empty() ? "–" : s; };
+
+      // Text that fits into max_w pixels, shortened with "…" if needed
+      auto fit = [&](std::string s, esphome::font::Font *f, int max_w) -> std::string {
+        int x1, y1, w, h;
+        it.get_text_bounds(0, 0, s.c_str(), f, TextAlign::TOP_LEFT, &x1, &y1, &w, &h);
+        if (w <= max_w) return s;
+        while (!s.empty()) {
+          do { s.pop_back(); } while (!s.empty() && (s.back() & 0xC0) == 0x80);  // whole UTF-8 chars
+          std::string t = s + "…";
+          it.get_text_bounds(0, 0, t.c_str(), f, TextAlign::TOP_LEFT, &x1, &y1, &w, &h);
+          if (w <= max_w) return t;
+        }
+        return "…";
+      };
+
+      auto rule = [&](int y) { it.line(M, y, W - M, y); };
+
+      // One "HH:MM|name|dose" list (medicine or supplements); returns the next y
+      auto section_list = [&](int y, esphome::image::Image *icon, const char *title,
+                              esphome::text_sensor::TextSensor *count,
+                              esphome::text_sensor::TextSensor *lines) -> int {
+        it.image(M, y, icon);
+        it.print(M + 56, y + 6, id(font_label), title);
+        std::string c = val(count);
+        it.printf(W - M, y + 6, id(font_label), TextAlign::TOP_RIGHT, "today: %s", or_dash(c).c_str());
+        y += 52;
+
+        std::string all = val(lines);
+        if (all.empty()) {
+          it.print(M, y, id(font_body), "None today");
+          return y + 40;
+        }
+        const int MAX_LINES = 5;
+        int shown = 0;
+        size_t start = 0;
+        while (start <= all.size() && shown < MAX_LINES) {
+          size_t end = all.find('\n', start);
+          std::string line = all.substr(start, end == std::string::npos ? std::string::npos : end - start);
+          start = (end == std::string::npos) ? all.size() + 1 : end + 1;
+          if (line.empty()) continue;
+
+          size_t p1 = line.find('|');
+          size_t p2 = (p1 == std::string::npos) ? std::string::npos : line.find('|', p1 + 1);
+          std::string t = line.substr(0, p1);
+          std::string name = (p1 == std::string::npos) ? "" : line.substr(p1 + 1, p2 == std::string::npos ? std::string::npos : p2 - p1 - 1);
+          std::string dose = (p2 == std::string::npos) ? "" : line.substr(p2 + 1);
+
+          int x1, y1, dose_w, h;
+          it.get_text_bounds(0, 0, dose.c_str(), id(font_body), TextAlign::TOP_LEFT, &x1, &y1, &dose_w, &h);
+          const int NAME_X = M + 80;
+          it.print(M, y, id(font_body), t.c_str());
+          it.print(NAME_X, y, id(font_body), fit(name, id(font_body), W - M - dose_w - 16 - NAME_X).c_str());
+          it.print(W - M, y, id(font_body), TextAlign::TOP_RIGHT, dose.c_str());
+          y += 34;
+          shown++;
+        }
+        if (start <= all.size()) {
+          it.print(M + 80, y, id(font_small), "…");
+          y += 26;
+        }
+        return y + 6;
+      };
+
+      // ---- Header -----------------------------------------------------
+      it.print(M, 16, id(font_title), fit(or_dash(val(id(ha_header))), id(font_title), W - 2 * M).c_str());
+      rule(64);
+
+      // ---- Awake / asleep ---------------------------------------------
+      int y = 80;
+      std::string label = val(id(ha_sleep_label));
+      bool asleep = label.rfind("Asleep", 0) == 0;
+      it.image(M, y + 12, asleep ? id(icon_asleep) : id(icon_awake));
+      it.print(TEXT_X, y, id(font_label), label.empty() ? "Awake for" : label.c_str());
+      it.print(TEXT_X, y + 26, id(font_big), or_dash(val(id(ha_sleep))).c_str());
+      std::string since = val(id(ha_sleep_since));
+      if (!since.empty()) {
+        it.print(W - M, y + 30, id(font_small), TextAlign::TOP_RIGHT, "since");
+        it.print(W - M, y + 54, id(font_title), TextAlign::TOP_RIGHT, since.c_str());
       }
-      if (id(wifi_rssi).has_state()) {
-        it.printf(W - 24, H - 44, id(font_small), TextAlign::TOP_RIGHT, "Wi-Fi %.0f dBm", id(wifi_rssi).state);
+      rule(190);
+
+      // ---- Last diaper, wet / dirty today -----------------------------
+      y = 206;
+      it.image(M, y + 12, id(icon_diaper));
+      it.print(TEXT_X, y, id(font_label), "Last diaper");
+      it.print(TEXT_X, y + 26, id(font_big), or_dash(val(id(ha_diaper))).c_str());
+      std::string dtime = val(id(ha_diaper_time));
+      if (!dtime.empty()) {
+        it.print(W - M, y + 30, id(font_small), TextAlign::TOP_RIGHT, "at");
+        it.print(W - M, y + 54, id(font_title), TextAlign::TOP_RIGHT, dtime.c_str());
+        it.print(W - M, y + 92, id(font_small), TextAlign::TOP_RIGHT, val(id(ha_diaper_type)).c_str());
+      }
+      y = 324;
+      it.image(TEXT_X, y, id(icon_wet));
+      it.printf(TEXT_X + 44, y, id(font_title), "%s wet", or_dash(val(id(ha_diaper_wet))).c_str());
+      it.image(TEXT_X + 190, y, id(icon_dirty));
+      it.printf(TEXT_X + 234, y, id(font_title), "%s dirty", or_dash(val(id(ha_diaper_dirty))).c_str());
+      rule(378);
+
+      // ---- Medicine and supplements -----------------------------------
+      y = section_list(394, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+      rule(y);
+      section_list(y + 16, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
+
+      // ---- Footer -----------------------------------------------------
+      rule(H - 44);
+      auto now = id(ha_time).now();
+      char updated[8] = "--:--";
+      if (now.is_valid()) now.strftime(updated, sizeof(updated), "%H:%M");
+      if (id(battery_level).has_state()) {
+        it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s  ·  Battery %.0f%%", updated, id(battery_level).state);
+      } else {
+        it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s", updated);
       }
 
-      // Half refresh: clean picture, ~1.7 s
+      // Half refresh: clean picture, no ghosting
       it.set_refresh_mode(1);

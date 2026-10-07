@@ -1,0 +1,44 @@
+# Material Design Icons, rendered black on transparent
+image:
+  - platform: file
+    file: mdi:sleep
+    id: icon_asleep
+    resize: 56x56
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:emoticon-happy-outline
+    id: icon_awake
+    resize: 56x56
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:human-baby-changing-table
+    id: icon_diaper
+    resize: 56x56
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:water
+    id: icon_wet
+    resize: 36x36
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:emoticon-poop
+    id: icon_dirty
+    resize: 36x36
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:pill
+    id: icon_medicine
+    resize: 40x40
+    type: BINARY
+    transparency: chroma_key
+  - platform: file
+    file: mdi:eyedropper
+    id: icon_supplement
+    resize: 40x40
+    type: BINARY
+    transparency: chroma_key

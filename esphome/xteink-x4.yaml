@@ -1,29 +1,56 @@
-# Xteink X4 — ESPHome e-paper display for Home Assistant
+# Xteink X4 — Sprout Track baby dashboard on e-paper
 # https://github.com/Boisti13/xteink-x4-esphome
 #
-# Copy this file, secrets.yaml, xteink_x4_partitions.csv and xteink_x4_modules/
-# into your ESPHome config dir (in Home Assistant: /homeassistant/esphome/).
+# Copy this file, xteink_x4_partitions.csv and xteink_x4_modules/ into your
+# ESPHome config dir (in Home Assistant: /homeassistant/esphome/) and add the
+# keys from secrets.example.yaml to your ESPHome secrets.yaml.
 # The Home Assistant side is packages/xteink_x4.yaml.
+#
+# Wake cycle: wake on the full hour (or the power button), connect, wait for
+# the values from Home Assistant, draw the page once, go back to deep sleep.
+# input_boolean.xteink_x4_keep_awake in Home Assistant keeps it awake for OTA.
 
 substitutions:
   name: xteink-x4
   friendly_name: Xteink X4
-  # How often the page is redrawn on its own (HA changes also redraw it)
-  refresh_interval: 5min
 
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   project:
     name: boisti13.xteink-x4-esphome
-    version: "0.1.0"
+    version: "0.2.0-dev"
   # The display driver includes <SPI.h> from the Arduino core
   libraries:
     - SPI
-  # The X4 has 16 MB flash; the app partitions start at 0x10000
-  platformio_options:
-    board_upload.maximum_size: "16777216"
-    board_upload.offset_address: "0x10000"
+  includes:
+    - xteink_x4_modules/power.h
+  on_boot:
+    priority: -100
+    then:
+      - wait_until:
+          condition:
+            api.connected:
+          timeout: 30s
+      # Without Home Assistant keep the last picture instead of drawing dashes
+      - if:
+          condition:
+            api.connected:
+          then:
+            - wait_until:
+                condition:
+                  lambda: |-
+                    return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
+                           id(ha_medicine).has_state() && id(ha_supplements).has_state();
+                timeout: 10s
+            - delay: 1s
+            - component.update: epaper_display
+          else:
+            - logger.log:
+                level: WARN
+                format: "No connection to Home Assistant, keeping the old picture"
+      - delay: 2s
+      - script.execute: go_to_sleep
 
 esp32:
   variant: esp32c3
@@ -51,19 +78,50 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  fast_connect: true
   ap:
     ssid: "${friendly_name} Fallback"
     password: !secret ap_password
 
 captive_portal:
 
+# Each wake is short: count a boot as good after 10 s, not the default
+# minute, or repeated short wakes end in safe mode.
+safe_mode:
+  boot_is_good_after: 10s
+
 time:
   - platform: homeassistant
     id: ha_time
     timezone: Europe/Berlin
 
+deep_sleep:
+  id: deep_sleep_ctrl
+  # Fallback; go_to_sleep sleeps until the next full hour
+  sleep_duration: 60min
+  # Power button (active low) wakes it at once
+  wakeup_pin:
+    number: GPIO3
+    inverted: true
+
+script:
+  - id: go_to_sleep
+    mode: single
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: keep_awake
+          then:
+            - logger.log: "Keep awake is on, staying awake"
+          else:
+            - lambda: xteink_hold_power_latch();
+            - deep_sleep.enter:
+                id: deep_sleep_ctrl
+                sleep_duration: !lambda "return xteink_ms_to_next_hour(id(ha_time).now());"
+
 packages:
   fonts: !include xteink_x4_modules/fonts.yaml
+  images: !include xteink_x4_modules/images.yaml
   sensors: !include xteink_x4_modules/sensors.yaml
   text_sensors: !include xteink_x4_modules/text_sensors.yaml
   binary_sensors: !include xteink_x4_modules/binary_sensors.yaml

@@ -1,14 +1,55 @@
-# Entities from packages/xteink_x4.yaml in Home Assistant.
-# A change redraws the page.
+# Display-ready values from packages/xteink_x4.yaml in Home Assistant.
 text_sensor:
   - platform: homeassistant
     id: ha_header
     entity_id: sensor.xteink_x4_header
-    on_value:
-      - component.update: epaper_display
 
+  # Sleep: H:MM, "Awake for"/"Asleep for", since HH:MM
   - platform: homeassistant
-    id: ha_message
-    entity_id: input_text.xteink_x4_message
-    on_value:
-      - component.update: epaper_display
+    id: ha_sleep
+    entity_id: sensor.xteink_x4_sleep
+  - platform: homeassistant
+    id: ha_sleep_label
+    entity_id: sensor.xteink_x4_sleep
+    attribute: label
+  - platform: homeassistant
+    id: ha_sleep_since
+    entity_id: sensor.xteink_x4_sleep
+    attribute: since
+
+  # Diaper: H:MM since the last one, its time and type, wet/dirty today
+  - platform: homeassistant
+    id: ha_diaper
+    entity_id: sensor.xteink_x4_diaper
+  - platform: homeassistant
+    id: ha_diaper_time
+    entity_id: sensor.xteink_x4_diaper
+    attribute: time
+  - platform: homeassistant
+    id: ha_diaper_type
+    entity_id: sensor.xteink_x4_diaper
+    attribute: type
+  - platform: homeassistant
+    id: ha_diaper_wet
+    entity_id: sensor.xteink_x4_diaper
+    attribute: wet
+  - platform: homeassistant
+    id: ha_diaper_dirty
+    entity_id: sensor.xteink_x4_diaper
+    attribute: dirty
+
+  # Medicine and supplements: count today, lines "HH:MM|name|dose"
+  - platform: homeassistant
+    id: ha_medicine
+    entity_id: sensor.xteink_x4_medicine
+  - platform: homeassistant
+    id: ha_medicine_lines
+    entity_id: sensor.xteink_x4_medicine
+    attribute: lines
+  - platform: homeassistant
+    id: ha_supplements
+    entity_id: sensor.xteink_x4_supplements
+  - platform: homeassistant
+    id: ha_supplements_lines
+    entity_id: sensor.xteink_x4_supplements
+    attribute: lines
