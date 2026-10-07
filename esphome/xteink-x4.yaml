@@ -104,6 +104,12 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   fast_connect: true
+  # A fixed address skips DHCP on every wake (reserve it on the router too)
+  manual_ip:
+    static_ip: !secret xteink_x4_ip
+    gateway: !secret xteink_x4_gateway
+    subnet: !secret xteink_x4_subnet
+    dns1: !secret xteink_x4_gateway
   ap:
     ssid: "${friendly_name} Fallback"
     password: !secret ap_password

@@ -85,7 +85,7 @@ something like `0:56`.
 | `xteink-x4.yaml` | the device config: wake cycle, deep sleep, Wi-Fi, API |
 | `xteink_x4_partitions.csv` | flash layout for the X4's 16 MB |
 | `xteink_x4_modules/` | page layout, fonts, icons, sensors, buttons, power latch |
-| `secrets.example.yaml` | copy its keys into your ESPHome `secrets.yaml` and fill them in |
+| `secrets.example.yaml` | copy its keys into your ESPHome `secrets.yaml` and fill them in — including a fixed IP address for the X4, which you also reserve on your router (it saves DHCP on every wake) |
 
 **4. First flash over USB.** Back up the stock firmware first if you want to go
 back later (see [Going back](#going-back-to-the-reader-firmware)). In the

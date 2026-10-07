@@ -24,6 +24,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ### Under the hood
 - `xteink_x4_modules/power.h` holds the power latch (GPIO13) through deep sleep and works out the time to the next wake, skipping the quiet hours.
+- **Fixed IP address** (`xteink_x4_ip`, `_gateway`, `_subnet` in `secrets.yaml`): no DHCP on every wake. Reserve the address on the router as well.
 - Shorter wakes: the fixed 1 s pause before drawing and 2 s pause after it are gone (the refresh itself blocks until the panel is done).
 - `safe_mode: boot_is_good_after: 10s`, so short wakes don't end in safe mode.
 - Images use the `platform: file` syntax; the ignored `platformio_options` are gone.
