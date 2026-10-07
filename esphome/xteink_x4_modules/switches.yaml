@@ -1,0 +1,21 @@
+# "Keep awake" on the device page in Home Assistant. It mirrors
+# input_boolean.xteink_x4_keep_awake, which is what the device obeys: the
+# helper can be switched while the X4 sleeps, this switch only while it's
+# awake. Needs "Allow the device to perform Home Assistant actions".
+switch:
+  - platform: template
+    id: keep_awake_switch
+    name: "Keep awake"
+    icon: mdi:sleep-off
+    entity_category: config
+    lambda: "return id(keep_awake).state;"
+    turn_on_action:
+      - homeassistant.action:
+          action: input_boolean.turn_on
+          data:
+            entity_id: input_boolean.xteink_x4_keep_awake
+    turn_off_action:
+      - homeassistant.action:
+          action: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.xteink_x4_keep_awake

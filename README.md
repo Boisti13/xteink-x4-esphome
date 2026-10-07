@@ -96,7 +96,7 @@ build *Manual download* and flash it with [ESPHome Web](https://web.esphome.io/)
 & services* as *Xteink X4*. Allow it to **perform Home Assistant actions**
 in its ESPHome options.
 
-**Later updates over Wi-Fi:** turn on **Xteink X4 Keep awake**, press the power
+**Later updates over Wi-Fi:** turn on **Xteink X4 Keep awake** (a helper, also on the X4's device page), press the power
 button (or wait for the full hour), install, then turn *Keep awake* off again —
 the device goes back to sleep at once.
 
@@ -174,6 +174,7 @@ esphome/
     sensors.yaml              # battery, Wi-Fi
     text_sensors.yaml         # values from Home Assistant
     binary_sensors.yaml       # seven buttons, keep awake
+    switches.yaml             # Keep awake on the device page
     power.h                   # power latch, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side

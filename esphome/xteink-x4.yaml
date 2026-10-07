@@ -178,4 +178,5 @@ packages:
   sensors: !include xteink_x4_modules/sensors.yaml
   text_sensors: !include xteink_x4_modules/text_sensors.yaml
   binary_sensors: !include xteink_x4_modules/binary_sensors.yaml
+  switches: !include xteink_x4_modules/switches.yaml
   display: !include xteink_x4_modules/display.yaml
