@@ -26,59 +26,64 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: boisti13.xteink-x4-esphome
-    version: "0.2.0"
+    version: "0.2.1-dev"
   # The display driver includes <SPI.h> from the Arduino core
   libraries:
     - SPI
   includes:
     - xteink_x4_modules/power.h
   on_boot:
-    priority: -100
-    then:
-      # After flashing or a reset: show a setup screen and wait up to
-      # 10 minutes, long enough to add the device to Home Assistant.
-      # After a wake from deep sleep: wait 30 s.
-      - if:
-          condition:
-            lambda: "return xteink_cold_boot();"
-          then:
-            - globals.set:
-                id: setup_screen
-                value: "true"
-            - component.update: epaper_display
-            - wait_until:
-                condition:
-                  api.connected:
-                timeout: 10min
-            - globals.set:
-                id: setup_screen
-                value: "false"
-          else:
-            - wait_until:
-                condition:
-                  api.connected:
-                timeout: 30s
-      - lambda: "id(connected_ms) = millis();"
-      # Without Home Assistant keep the last picture instead of drawing dashes
-      - if:
-          condition:
-            api.connected:
-          then:
-            - wait_until:
-                condition:
-                  lambda: |-
-                    return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
-                           id(ha_medicine).has_state() && id(ha_supplements).has_state();
-                timeout: 10s
-            # Attributes arrive in the same burst as the states
-            - delay: 200ms
-            # Blocks until the panel has finished refreshing
-            - component.update: epaper_display
-          else:
-            - logger.log:
-                level: WARN
-                format: "No connection to Home Assistant, keeping the old picture"
-      - script.execute: go_to_sleep
+    # Before the display driver starts: release the pins held through
+    # deep sleep, so it can reset (and so wake) the panel
+    - priority: 800
+      then:
+        - lambda: xteink_release_display_pins();
+    - priority: -100
+      then:
+        # After flashing or a reset: show a setup screen and wait up to
+        # 10 minutes, long enough to add the device to Home Assistant.
+        # After a wake from deep sleep: wait 30 s.
+        - if:
+            condition:
+              lambda: "return xteink_cold_boot();"
+            then:
+              - globals.set:
+                  id: setup_screen
+                  value: "true"
+              - component.update: epaper_display
+              - wait_until:
+                  condition:
+                    api.connected:
+                  timeout: 10min
+              - globals.set:
+                  id: setup_screen
+                  value: "false"
+            else:
+              - wait_until:
+                  condition:
+                    api.connected:
+                  timeout: 30s
+        - lambda: "id(connected_ms) = millis();"
+        # Without Home Assistant keep the last picture instead of drawing dashes
+        - if:
+            condition:
+              api.connected:
+            then:
+              - wait_until:
+                  condition:
+                    lambda: |-
+                      return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
+                             id(ha_medicine).has_state() && id(ha_supplements).has_state();
+                  timeout: 10s
+              # Attributes arrive in the same burst as the states
+              - delay: 200ms
+              # Blocks until the panel has finished refreshing
+              - component.update: epaper_display
+            else:
+              - logger.log:
+                  level: WARN
+                  format: "No connection to Home Assistant, keeping the old picture"
+        - script.execute: go_to_sleep
 
 esp32:
   variant: esp32c3
@@ -170,7 +175,9 @@ script:
                 id: wake_total
                 state: !lambda "return millis() / 1000.0f;"
             - delay: 300ms
-            - lambda: xteink_hold_power_latch();
+            - lambda: |-
+                xteink_display_power_off();
+                xteink_hold_power_latch();
             - deep_sleep.enter:
                 id: deep_sleep_ctrl
                 sleep_duration: !lambda "return xteink_ms_to_next_wake(id(ha_time).now(), ${quiet_start}, ${quiet_end});"
