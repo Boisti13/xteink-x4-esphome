@@ -1,10 +1,39 @@
 sensor:
-  # Battery from GPIO0 (divider ×2), LiPo curve → percent
-  - platform: xteink_battery
+  # Battery voltage: GPIO0 through a 1:2 divider. Read on every wake (the
+  # first reading comes right at boot), averaged over 16 samples.
+  - platform: adc
+    id: battery_voltage
+    name: "Battery voltage"
+    pin: GPIO0
+    attenuation: 12db
+    samples: 16
     update_interval: 60s
-    battery_level:
-      id: battery_level
-      name: "Battery"
+    accuracy_decimals: 2
+    device_class: voltage
+    state_class: measurement
+    entity_category: diagnostic
+    filters:
+      - multiply: 2.0
+
+  # Battery level from the voltage, along a LiPo discharge curve (as read
+  # while the X4 is awake, so a little lower than at rest)
+  - platform: copy
+    source_id: battery_voltage
+    id: battery_level
+    name: "Battery"
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    accuracy_decimals: 0
+    filters:
+      - lambda: |-
+          static const float V[] = {3.30, 3.50, 3.60, 3.70, 3.80, 3.90, 4.00, 4.10, 4.20};
+          static const float P[] = {   0,   15,   27,   41,   55,   70,   83,   95,  100};
+          if (x <= V[0]) return 0.0f;
+          for (int i = 1; i < 9; i++) {
+            if (x <= V[i]) return P[i - 1] + (P[i] - P[i - 1]) * (x - V[i - 1]) / (V[i] - V[i - 1]);
+          }
+          return 100.0f;
 
   - platform: wifi_signal
     id: wifi_rssi

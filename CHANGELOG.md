@@ -4,10 +4,14 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+### Added
+- **Battery voltage** as its own sensor (`sensor.xteink_x4_battery_voltage`, V) — steadier than the percentage for following the battery over days.
+
 ### Fixed
 - **Longer battery life (to be confirmed)**: the e-paper panel is now switched off before the X4 sleeps. The display driver left the panel's charge pumps and oscillator running after every refresh, so it drew current all night; now they're switched off and the controller goes into its deep-sleep mode (the picture stays). Before: about 13 % battery per day, about a week per charge.
 
 ### Under the hood
+- The battery is read with ESPHome's own ADC sensor (GPIO0, ×2 divider, 16 samples) instead of the `xteink_battery` driver; the percentage comes from the voltage along a LiPo curve that matches the old one, so the history carries on.
 - `power.h`: `xteink_display_power_off()` before deep sleep holds the panel's chip select and reset high; `xteink_release_display_pins()` releases them at boot, before the driver resets the panel.
 
 ## v0.2.0 — 2026-10-07

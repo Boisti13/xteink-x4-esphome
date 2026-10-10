@@ -92,10 +92,10 @@ esp32:
   framework:
     type: arduino
 
-# Display, button and battery drivers for the X4 (pinned to a known commit).
+# Display and button drivers for the X4 (pinned to a known commit).
 external_components:
   - source: github://ngxson/esphome-component-xteink@fe4aba7a1d3f882ec078dffdcdea5ba5efa03c60
-    components: [xteink_edp, xteink_battery, xteink_input]
+    components: [xteink_edp, xteink_input]
 
 logger:
   level: DEBUG

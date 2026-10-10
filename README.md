@@ -123,7 +123,7 @@ the device goes back to sleep at once.
 
 "Today" is since midnight in Home Assistant's time zone.
 
-**From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_wi_fi_signal`,
+**From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_battery_voltage` (V), `sensor.xteink_x4_wi_fi_signal`,
 `sensor.xteink_x4_wake_connected_after` and `sensor.xteink_x4_wake_total` (seconds per wake),
 `binary_sensor.xteink_x4_usb_power` (on while USB is plugged in),
 and the seven buttons as `binary_sensor.xteink_x4_button_1` … `_button_4`,
@@ -152,7 +152,7 @@ so on its 650 mAh battery:
 | Power latch | GPIO13 — held through deep sleep, otherwise the X4 switches itself off |
 | Other | microSD on the same SPI bus (CS 12, MISO 7) |
 
-The display, button and battery drivers come from
+The display and button drivers come from
 [ngxson/esphome-component-xteink](https://github.com/ngxson/esphome-component-xteink),
 loaded by ESPHome at build time and pinned to a fixed commit. Pin details
 from Adafruit's [CircuitPython on the Xteink X4](https://learn.adafruit.com/circuitpython-on-the-xteink-x4-ereader/pinouts).
@@ -179,7 +179,7 @@ esphome/
   xteink_x4_modules/
     display.yaml              # the page (lambda)
     fonts.yaml / images.yaml  # Roboto, Material Design Icons
-    sensors.yaml              # battery, Wi-Fi
+    sensors.yaml              # battery voltage and level, Wi-Fi, wake times
     text_sensors.yaml         # values from Home Assistant
     binary_sensors.yaml       # seven buttons, keep awake
     switches.yaml             # Keep awake on the device page
