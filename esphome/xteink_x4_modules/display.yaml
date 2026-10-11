@@ -63,19 +63,23 @@ display:
       }
 
       // One "HH:MM|name|dose" list (medicine or supplements) in the column
-      // x0..x1; returns the next y. Landscape uses the smaller font, so
-      // names fit into the narrower column.
-      esphome::font::Font *LIST_FONT = LANDSCAPE ? id(font_small) : id(font_body);
-      const int LIST_LINE = LANDSCAPE ? 28 : 34;
-      const int TIME_W = LANDSCAPE ? 62 : 80;
+      // x0..x1; returns the next y. Landscape uses a smaller font for the
+      // entries, so names fit into the narrower column.
+      esphome::font::Font *LIST_FONT = LANDSCAPE ? id(font_list) : id(font_body);
+      const int LIST_LINE = LANDSCAPE ? 31 : 34;
+      const int TIME_W = LANDSCAPE ? 70 : 80;
+      // Landscape headings are larger than their entries; portrait as before
+      esphome::font::Font *HEAD_FONT = LANDSCAPE ? id(font_section) : id(font_label);
+      const int HEAD_Y = LANDSCAPE ? 4 : 6;
+      const int HEAD_H = LANDSCAPE ? 54 : 52;
       auto section_list = [&](int x0, int x1, int y, int max_lines, esphome::image::Image *icon,
                               const char *title, esphome::text_sensor::TextSensor *count,
                               esphome::text_sensor::TextSensor *lines) -> int {
         it.image(x0, y, icon);
-        it.print(x0 + 56, y + 6, id(font_label), title);
+        it.print(x0 + 56, y + HEAD_Y, HEAD_FONT, title);
         std::string c = val(count);
-        it.printf(x1, y + 6, id(font_label), TextAlign::TOP_RIGHT, "today: %s", or_dash(c).c_str());
-        y += 52;
+        it.printf(x1, y + HEAD_Y, HEAD_FONT, TextAlign::TOP_RIGHT, "today: %s", or_dash(c).c_str());
+        y += HEAD_H;
 
         std::string all = val(lines);
         if (all.empty()) {
@@ -155,11 +159,11 @@ display:
         const int MID = 360;
         section_sleep_diaper(M, MID - 20, 80);
         it.line(MID, 80, MID, H - 60);
-        int y = section_list(MID + 20, W - M, 80, 4, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+        int y = section_list(MID + 20, W - M, 80, 3, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
         it.line(MID + 20, y, W - M, y);
         // As many supplement lines as still fit above the footer
-        int room = std::max(1, (H - 60 - (y + 16 + 52)) / LIST_LINE);
-        section_list(MID + 20, W - M, y + 16, std::min(4, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
+        int room = std::max(1, (H - 60 - (y + 16 + HEAD_H)) / LIST_LINE);
+        section_list(MID + 20, W - M, y + 16, std::min(3, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
       } else {
         // One column, top to bottom
         section_sleep_diaper(M, W - M, 80);

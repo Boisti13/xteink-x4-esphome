@@ -12,9 +12,19 @@ font:
     id: font_label
     size: 24
     glyphsets: [GF_Latin_Core]
+  # Medicine / Supplements headings in landscape, larger than their entries
+  - file: "gfonts://Roboto@700"
+    id: font_section
+    size: 28
+    glyphsets: [GF_Latin_Core]
   - file: "gfonts://Roboto"
     id: font_body
     size: 26
+    glyphsets: [GF_Latin_Core]
+  # Medicine and supplement entries in landscape
+  - file: "gfonts://Roboto"
+    id: font_list
+    size: 23
     glyphsets: [GF_Latin_Core]
   - file: "gfonts://Roboto"
     id: font_small
