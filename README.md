@@ -14,7 +14,7 @@ supplements were given when. [Home Assistant](https://www.home-assistant.io/)
 fetches the data; the X4 runs [ESPHome](https://esphome.io/), wakes once an
 hour during the day, draws the page and sleeps again — about a week on one charge.
 
-<p align="center"><img src="docs/preview.png" alt="The dashboard page" width="320"></p>
+<p align="center"><img src="docs/preview-landscape.png" alt="The dashboard in landscape" width="520">&nbsp;&nbsp;<img src="docs/preview.png" alt="The dashboard in portrait" width="190"></p>
 
 ## Highlights
 
@@ -24,6 +24,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
 - **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
+- **Landscape or portrait**: two columns side by side, or one column top to bottom — a **Landscape** switch on the device page (or `input_boolean.xteink_x4_landscape`) changes it, no reflashing
 - **Keep awake** switch in Home Assistant for OTA updates; the picture stays as it is when Home Assistant can't be reached
 - E-paper keeps the last page without power; half refresh, so no ghosting
 
@@ -119,6 +120,7 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_medicine` | doses today | `lines`: one per dose, newest first, `HH:MM\|name\|amount` |
 | `sensor.xteink_x4_supplements` | doses today | `lines`, as above |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
+| `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
 | `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements` | the raw API answers | |
 
 "Today" is since midnight in Home Assistant's time zone.
@@ -182,12 +184,12 @@ esphome/
     sensors.yaml              # battery voltage and level, Wi-Fi, wake times
     text_sensors.yaml         # values from Home Assistant
     binary_sensors.yaml       # seven buttons, keep awake
-    switches.yaml             # Keep awake on the device page
+    switches.yaml             # Keep awake and Landscape on the device page
     power.h                   # power latch, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
 docs/
-  preview.png / footer-states.png
+  preview.png / preview-landscape.png / footer-states.png
 ```
 
 ## Development

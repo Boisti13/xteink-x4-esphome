@@ -50,3 +50,15 @@ binary_sensor:
             lambda: "return !x;"
           then:
             - script.execute: go_to_sleep
+
+  # input_boolean.xteink_x4_landscape: on = landscape, off = portrait.
+  # Switched while the X4 is awake, the page is redrawn at once.
+  - platform: homeassistant
+    id: landscape
+    entity_id: input_boolean.xteink_x4_landscape
+    on_state:
+      - if:
+          condition:
+            lambda: "return !id(setup_screen);"
+          then:
+            - component.update: epaper_display

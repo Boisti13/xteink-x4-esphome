@@ -1,4 +1,9 @@
-# "Keep awake" on the device page in Home Assistant. It mirrors
+# Switches on the device page in Home Assistant. Each mirrors a helper from
+# packages/xteink_x4.yaml, which is what the device reads on every wake: the
+# helper can be switched while the X4 sleeps, these switches only while
+# it's awake. They need "Allow the device to perform Home Assistant actions".
+#
+# "Keep awake" mirrors
 # input_boolean.xteink_x4_keep_awake, which is what the device obeys: the
 # helper can be switched while the X4 sleeps, this switch only while it's
 # awake. Needs "Allow the device to perform Home Assistant actions".
@@ -19,3 +24,21 @@ switch:
           action: input_boolean.turn_off
           data:
             entity_id: input_boolean.xteink_x4_keep_awake
+
+  # Landscape (two columns) or portrait (one column)
+  - platform: template
+    id: landscape_switch
+    name: "Landscape"
+    icon: mdi:phone-rotate-landscape
+    entity_category: config
+    lambda: "return !id(landscape).has_state() || id(landscape).state;"
+    turn_on_action:
+      - homeassistant.action:
+          action: input_boolean.turn_on
+          data:
+            entity_id: input_boolean.xteink_x4_landscape
+    turn_off_action:
+      - homeassistant.action:
+          action: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.xteink_x4_landscape

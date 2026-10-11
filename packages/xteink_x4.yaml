@@ -59,12 +59,18 @@ rest:
           - activities
 
 ###############################################################################
-# Keep the display awake (for OTA updates and testing)
+# Keep the display awake (for OTA updates and testing), screen orientation
 ###############################################################################
 input_boolean:
   xteink_x4_keep_awake:
     name: Xteink X4 Keep awake
     icon: mdi:sleep-off
+
+  # On = landscape (two columns), off = portrait (one column); read by the
+  # X4 on every wake
+  xteink_x4_landscape:
+    name: Xteink X4 Landscape
+    icon: mdi:phone-rotate-landscape
 
 ###############################################################################
 # Display-ready values. Times are local, durations H:MM.

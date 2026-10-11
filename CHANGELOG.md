@@ -5,6 +5,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ## Unreleased
 
 ### Added
+- **Landscape layout**: the page can also be shown in landscape, with sleep and diapers on the left and medicine and supplements on the right (in a slightly smaller font, so names fit). A **Landscape** switch on the X4's device page, mirrored by `input_boolean.xteink_x4_landscape`, switches between landscape and portrait without reflashing — at once while the X4 is awake, otherwise at the next wake. Set the exact rotations with `landscape_rotation` / `portrait_rotation` in `esphome/xteink-x4.yaml`.
 - **Battery voltage** as its own sensor (`sensor.xteink_x4_battery_voltage`, V) — steadier than the percentage for following the battery over days.
 
 ### Under the hood

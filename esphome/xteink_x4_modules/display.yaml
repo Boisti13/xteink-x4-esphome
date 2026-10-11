@@ -1,17 +1,22 @@
 # 4.26" 800×480 GDEQ0426T82 panel, SSD1677 controller.
-# Rotation 270 = portrait, 480 wide and 800 high.
+# Landscape (800×480, two columns) or portrait (480×800, one column),
+# chosen on every draw by input_boolean.xteink_x4_landscape (the Landscape
+# switch); the rotations come from esphome/xteink-x4.yaml.
 # Drawn once per wake (esphome/xteink-x4.yaml → on_boot) and on a press of
 # the power button while awake — not on a timer.
 display:
   - platform: xteink_edp
     id: epaper_display
-    rotation: 270
     update_interval: never
     lambda: |-
+      // Landscape unless Home Assistant says portrait
+      bool want_landscape = !id(landscape).has_state() || id(landscape).state;
+      it.set_rotation(static_cast<esphome::display::DisplayRotation>(
+          want_landscape ? ${landscape_rotation} : ${portrait_rotation}));
       const int W = it.get_width();
       const int H = it.get_height();
       const int M = 20;  // side margin
-      const int TEXT_X = M + 72;  // text right of a section icon
+      const bool LANDSCAPE = W > H;
 
       auto val = [](esphome::text_sensor::TextSensor *s) -> std::string {
         if (!s->has_state()) return "";
@@ -57,25 +62,30 @@ display:
         return;
       }
 
-      // One "HH:MM|name|dose" list (medicine or supplements); returns the next y
-      auto section_list = [&](int y, esphome::image::Image *icon, const char *title,
-                              esphome::text_sensor::TextSensor *count,
+      // One "HH:MM|name|dose" list (medicine or supplements) in the column
+      // x0..x1; returns the next y. Landscape uses the smaller font, so
+      // names fit into the narrower column.
+      esphome::font::Font *LIST_FONT = LANDSCAPE ? id(font_small) : id(font_body);
+      const int LIST_LINE = LANDSCAPE ? 28 : 34;
+      const int TIME_W = LANDSCAPE ? 62 : 80;
+      auto section_list = [&](int x0, int x1, int y, int max_lines, esphome::image::Image *icon,
+                              const char *title, esphome::text_sensor::TextSensor *count,
                               esphome::text_sensor::TextSensor *lines) -> int {
-        it.image(M, y, icon);
-        it.print(M + 56, y + 6, id(font_label), title);
+        it.image(x0, y, icon);
+        it.print(x0 + 56, y + 6, id(font_label), title);
         std::string c = val(count);
-        it.printf(W - M, y + 6, id(font_label), TextAlign::TOP_RIGHT, "today: %s", or_dash(c).c_str());
+        it.printf(x1, y + 6, id(font_label), TextAlign::TOP_RIGHT, "today: %s", or_dash(c).c_str());
         y += 52;
 
         std::string all = val(lines);
         if (all.empty()) {
-          it.print(M, y, id(font_body), "None today");
-          return y + 40;
+          it.print(x0, y, LIST_FONT, "None today");
+          return y + LIST_LINE + 6;
         }
-        const int MAX_LINES = 5;
+        const int NAME_X = x0 + TIME_W;
         int shown = 0;
         size_t start = 0;
-        while (start <= all.size() && shown < MAX_LINES) {
+        while (start <= all.size() && shown < max_lines) {
           size_t end = all.find('\n', start);
           std::string line = all.substr(start, end == std::string::npos ? std::string::npos : end - start);
           start = (end == std::string::npos) ? all.size() + 1 : end + 1;
@@ -87,62 +97,77 @@ display:
           std::string name = (p1 == std::string::npos) ? "" : line.substr(p1 + 1, p2 == std::string::npos ? std::string::npos : p2 - p1 - 1);
           std::string dose = (p2 == std::string::npos) ? "" : line.substr(p2 + 1);
 
-          int x1, y1, dose_w, h;
-          it.get_text_bounds(0, 0, dose.c_str(), id(font_body), TextAlign::TOP_LEFT, &x1, &y1, &dose_w, &h);
-          const int NAME_X = M + 80;
-          it.print(M, y, id(font_body), t.c_str());
-          it.print(NAME_X, y, id(font_body), fit(name, id(font_body), W - M - dose_w - 16 - NAME_X).c_str());
-          it.print(W - M, y, id(font_body), TextAlign::TOP_RIGHT, dose.c_str());
-          y += 34;
+          int bx, by, dose_w, bh;
+          it.get_text_bounds(0, 0, dose.c_str(), LIST_FONT, TextAlign::TOP_LEFT, &bx, &by, &dose_w, &bh);
+          it.print(x0, y, LIST_FONT, t.c_str());
+          it.print(NAME_X, y, LIST_FONT, fit(name, LIST_FONT, x1 - dose_w - 12 - NAME_X).c_str());
+          it.print(x1, y, LIST_FONT, TextAlign::TOP_RIGHT, dose.c_str());
+          y += LIST_LINE;
           shown++;
         }
         if (start <= all.size()) {
-          it.print(M + 80, y, id(font_small), "…");
+          it.print(NAME_X, y, id(font_small), "…");
           y += 26;
         }
         return y + 6;
+      };
+
+      // Awake/asleep and last diaper in the column x0..x1, from y
+      auto section_sleep_diaper = [&](int x0, int x1, int y) {
+        const int TX = x0 + 72;  // text right of the section icon
+        std::string label = val(id(ha_sleep_label));
+        bool asleep = label.rfind("Asleep", 0) == 0;
+        it.image(x0, y + 12, asleep ? id(icon_asleep) : id(icon_awake));
+        it.print(TX, y, id(font_label), label.empty() ? "Awake for" : label.c_str());
+        it.print(TX, y + 26, id(font_big), or_dash(val(id(ha_sleep))).c_str());
+        std::string since = val(id(ha_sleep_since));
+        if (!since.empty()) {
+          it.print(x1, y + 30, id(font_small), TextAlign::TOP_RIGHT, "since");
+          it.print(x1, y + 54, id(font_title), TextAlign::TOP_RIGHT, since.c_str());
+        }
+        it.line(x0, y + 110, x1, y + 110);
+
+        y += 126;
+        it.image(x0, y + 12, id(icon_diaper));
+        it.print(TX, y, id(font_label), "Last diaper");
+        it.print(TX, y + 26, id(font_big), or_dash(val(id(ha_diaper))).c_str());
+        std::string dtime = val(id(ha_diaper_time));
+        if (!dtime.empty()) {
+          it.print(x1, y + 30, id(font_small), TextAlign::TOP_RIGHT, "at");
+          it.print(x1, y + 54, id(font_title), TextAlign::TOP_RIGHT, dtime.c_str());
+          it.print(x1, y + 92, id(font_small), TextAlign::TOP_RIGHT, val(id(ha_diaper_type)).c_str());
+        }
+        // Wet / dirty today; in the narrower landscape column from the left edge
+        const int CX = LANDSCAPE ? x0 : TX;
+        y += 118;
+        it.image(CX, y, id(icon_wet));
+        it.printf(CX + 44, y, id(font_title), "%s wet", or_dash(val(id(ha_diaper_wet))).c_str());
+        it.image(CX + 170, y, id(icon_dirty));
+        it.printf(CX + 214, y, id(font_title), "%s dirty", or_dash(val(id(ha_diaper_dirty))).c_str());
       };
 
       // ---- Header -----------------------------------------------------
       it.print(M, 16, id(font_title), fit(or_dash(val(id(ha_header))), id(font_title), W - 2 * M).c_str());
       rule(64);
 
-      // ---- Awake / asleep ---------------------------------------------
-      int y = 80;
-      std::string label = val(id(ha_sleep_label));
-      bool asleep = label.rfind("Asleep", 0) == 0;
-      it.image(M, y + 12, asleep ? id(icon_asleep) : id(icon_awake));
-      it.print(TEXT_X, y, id(font_label), label.empty() ? "Awake for" : label.c_str());
-      it.print(TEXT_X, y + 26, id(font_big), or_dash(val(id(ha_sleep))).c_str());
-      std::string since = val(id(ha_sleep_since));
-      if (!since.empty()) {
-        it.print(W - M, y + 30, id(font_small), TextAlign::TOP_RIGHT, "since");
-        it.print(W - M, y + 54, id(font_title), TextAlign::TOP_RIGHT, since.c_str());
+      if (LANDSCAPE) {
+        // Two columns: sleep and diapers left, medicine and supplements right
+        const int MID = 360;
+        section_sleep_diaper(M, MID - 20, 80);
+        it.line(MID, 80, MID, H - 60);
+        int y = section_list(MID + 20, W - M, 80, 4, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+        it.line(MID + 20, y, W - M, y);
+        // As many supplement lines as still fit above the footer
+        int room = std::max(1, (H - 60 - (y + 16 + 52)) / LIST_LINE);
+        section_list(MID + 20, W - M, y + 16, std::min(4, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
+      } else {
+        // One column, top to bottom
+        section_sleep_diaper(M, W - M, 80);
+        rule(378);
+        int y = section_list(M, W - M, 394, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+        rule(y);
+        section_list(M, W - M, y + 16, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
       }
-      rule(190);
-
-      // ---- Last diaper, wet / dirty today -----------------------------
-      y = 206;
-      it.image(M, y + 12, id(icon_diaper));
-      it.print(TEXT_X, y, id(font_label), "Last diaper");
-      it.print(TEXT_X, y + 26, id(font_big), or_dash(val(id(ha_diaper))).c_str());
-      std::string dtime = val(id(ha_diaper_time));
-      if (!dtime.empty()) {
-        it.print(W - M, y + 30, id(font_small), TextAlign::TOP_RIGHT, "at");
-        it.print(W - M, y + 54, id(font_title), TextAlign::TOP_RIGHT, dtime.c_str());
-        it.print(W - M, y + 92, id(font_small), TextAlign::TOP_RIGHT, val(id(ha_diaper_type)).c_str());
-      }
-      y = 324;
-      it.image(TEXT_X, y, id(icon_wet));
-      it.printf(TEXT_X + 44, y, id(font_title), "%s wet", or_dash(val(id(ha_diaper_wet))).c_str());
-      it.image(TEXT_X + 190, y, id(icon_dirty));
-      it.printf(TEXT_X + 234, y, id(font_title), "%s dirty", or_dash(val(id(ha_diaper_dirty))).c_str());
-      rule(378);
-
-      // ---- Medicine and supplements -----------------------------------
-      y = section_list(394, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
-      rule(y);
-      section_list(y + 16, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
 
       // ---- Footer: last update, battery and charging; a black bar when
       // the battery is low and USB isn't plugged in ----------------------
