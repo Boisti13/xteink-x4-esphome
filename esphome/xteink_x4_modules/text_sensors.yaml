@@ -4,6 +4,11 @@ text_sensor:
     id: ha_header
     entity_id: sensor.xteink_x4_header
 
+  # Outside temperature, "16.5°"
+  - platform: homeassistant
+    id: ha_outdoor
+    entity_id: sensor.xteink_x4_outdoor
+
   # Sleep: H:MM, "Awake for"/"Asleep for", since HH:MM
   - platform: homeassistant
     id: ha_sleep

@@ -48,3 +48,9 @@ image:
     resize: 36x36
     type: BINARY
     transparency: chroma_key
+  - platform: file
+    file: mdi:thermometer
+    id: icon_outdoor
+    resize: 36x36
+    type: BINARY
+    transparency: chroma_key

@@ -151,7 +151,17 @@ display:
       };
 
       // ---- Header -----------------------------------------------------
-      it.print(M, 16, id(font_title), fit(or_dash(val(id(ha_header))), id(font_title), W - 2 * M).c_str());
+      // Outside temperature at the right, with a thermometer icon
+      std::string outdoor = val(id(ha_outdoor));
+      int header_w = W - 2 * M;
+      if (!outdoor.empty()) {
+        int bx, by, tw, th;
+        it.get_text_bounds(0, 0, outdoor.c_str(), id(font_title), TextAlign::TOP_LEFT, &bx, &by, &tw, &th);
+        it.print(W - M, 16, id(font_title), TextAlign::TOP_RIGHT, outdoor.c_str());
+        it.image(W - M - tw - 38, 18, id(icon_outdoor));
+        header_w -= tw + 38 + 16;
+      }
+      it.print(M, 16, id(font_title), fit(or_dash(val(id(ha_header))), id(font_title), header_w).c_str());
       rule(64);
 
       if (LANDSCAPE) {

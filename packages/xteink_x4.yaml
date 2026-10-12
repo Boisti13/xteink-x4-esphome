@@ -87,6 +87,15 @@ template:
           {% set name = baby.get('firstName', '') %}
           {{ (name ~ ' · ' if name else '') ~ now().strftime('%a, %-d %b') }}
 
+      # Outside temperature for the header, e.g. "16.5°" — to know how to
+      # dress the baby. Point it at your own outdoor sensor.
+      - name: "Xteink X4 Outdoor"
+        unique_id: xteink_x4_outdoor
+        icon: mdi:thermometer
+        availability: "{{ has_value('sensor.virtual_outdoor_temperature') }}"
+        state: >
+          {{ '%.1f°' | format(states('sensor.virtual_outdoor_temperature') | float) }}
+
       # State: time awake (or asleep) as H:MM. Attributes: label, since.
       - name: "Xteink X4 Sleep"
         unique_id: xteink_x4_sleep

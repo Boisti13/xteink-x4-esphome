@@ -24,6 +24,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
 - **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
+- **Outside temperature** at the top right (e.g. *16.5°*), so you know how warmly to dress the baby — from any outdoor sensor in Home Assistant
 - **Landscape or portrait**: two columns side by side, or one column top to bottom — a **Landscape** switch on the device page (or `input_boolean.xteink_x4_landscape`) changes it, no reflashing
 - **Keep awake** switch in Home Assistant for OTA updates; the picture stays as it is when Home Assistant can't be reached
 - E-paper keeps the last page without power; half refresh, so no ghosting
@@ -115,6 +116,7 @@ the device goes back to sleep at once.
 | Entity | State | Attributes |
 |---|---|---|
 | `sensor.xteink_x4_header` | *Emma · Wed, 7 Oct* | |
+| `sensor.xteink_x4_outdoor` | outside temperature, *16.5°* — from `sensor.virtual_outdoor_temperature`; point it at your own outdoor sensor | |
 | `sensor.xteink_x4_sleep` | awake/asleep for, `H:MM` | `label` (*Awake for* / *Asleep for*), `since` (`HH:MM`) |
 | `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `wet`, `dirty` (today) |
 | `sensor.xteink_x4_medicine` | doses today | `lines`: one per dose, newest first, `HH:MM\|name\|amount` |

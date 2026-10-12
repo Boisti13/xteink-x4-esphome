@@ -5,6 +5,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ## Unreleased
 
 ### Added
+- **Outside temperature** in the header, at the right with a thermometer icon (*16.5°*), in both layouts — to know how warmly to dress the baby. Comes from `sensor.xteink_x4_outdoor` in the package, which reads `sensor.virtual_outdoor_temperature`.
 - **Landscape layout**: the page can also be shown in landscape, with sleep and diapers on the left and medicine and supplements on the right (entries at 23 px under 28 px headings, so names fit the narrower column; up to 3 entries each). A **Landscape** switch on the X4's device page, mirrored by `input_boolean.xteink_x4_landscape`, switches between landscape and portrait without reflashing — at once while the X4 is awake, otherwise at the next wake. Set the exact rotations with `landscape_rotation` / `portrait_rotation` in `esphome/xteink-x4.yaml`.
 - **Battery voltage** as its own sensor (`sensor.xteink_x4_battery_voltage`, V) — steadier than the percentage for following the battery over days.
 
