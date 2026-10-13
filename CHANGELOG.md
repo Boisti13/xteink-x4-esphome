@@ -2,7 +2,7 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](https://semver.org/); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v0.3.0 — 2026-10-13
 
 ### Added
 - **Button only** wake mode: with `input_boolean.xteink_x4_button_only` (also a *Button only* switch on the X4's device page) the X4 skips the hourly wakes and sleeps until the power button is pressed — like switched off, but the button still brings a fresh page. The footer then reads *20:46 · press power*. Switching back to hourly takes effect after the next button press. Without an answer from Home Assistant the X4 keeps waking hourly.
