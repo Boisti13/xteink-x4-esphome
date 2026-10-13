@@ -62,3 +62,17 @@ binary_sensor:
             lambda: "return !id(setup_screen);"
           then:
             - component.update: epaper_display
+
+  # input_boolean.xteink_x4_button_only: on = no hourly wakes, the X4
+  # sleeps until the power button is pressed; off = hourly as usual.
+  # Read on every wake, takes effect at the next sleep. Switched while the
+  # X4 is awake, the footer is redrawn to match.
+  - platform: homeassistant
+    id: button_only
+    entity_id: input_boolean.xteink_x4_button_only
+    on_state:
+      - if:
+          condition:
+            lambda: "return !id(setup_screen);"
+          then:
+            - component.update: epaper_display

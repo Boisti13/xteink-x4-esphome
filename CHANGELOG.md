@@ -5,11 +5,13 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ## Unreleased
 
 ### Added
+- **Button only** wake mode: with `input_boolean.xteink_x4_button_only` (also a *Button only* switch on the X4's device page) the X4 skips the hourly wakes and sleeps until the power button is pressed — like switched off, but the button still brings a fresh page. The footer then reads *20:46 · press power*. Switching back to hourly takes effect after the next button press. Without an answer from Home Assistant the X4 keeps waking hourly.
 - **Outside temperature** in the header, at the right with a thermometer icon (*16.5°*), in both layouts — to know how warmly to dress the baby. Comes from `sensor.xteink_x4_outdoor` in the package, which reads `sensor.virtual_outdoor_temperature`.
 - **Landscape layout**: the page can also be shown in landscape, with sleep and diapers on the left and medicine and supplements on the right (entries at 23 px under 28 px headings, so names fit the narrower column; up to 3 entries each). A **Landscape** switch on the X4's device page, mirrored by `input_boolean.xteink_x4_landscape`, switches between landscape and portrait without reflashing — at once while the X4 is awake, otherwise at the next wake. Set the exact rotations with `landscape_rotation` / `portrait_rotation` in `esphome/xteink-x4.yaml`.
 - **Battery voltage** as its own sensor (`sensor.xteink_x4_battery_voltage`, V) — steadier than the percentage for following the battery over days.
 
 ### Under the hood
+- The deep sleep component no longer has a default `sleep_duration` (the 60 min fallback was never used); `go_to_sleep` passes one, or none in button-only mode so only the power button wakes it.
 - The battery is read with ESPHome's own ADC sensor (GPIO0, ×2 divider, 16 samples) instead of the `xteink_battery` driver; the percentage comes from the voltage along a LiPo curve that matches the old one, so the history carries on.
 - Tried and undone: switching the e-paper panel off (and holding its chip select and reset high) before deep sleep. Instead of saving power, the battery drained faster — about 18 % a day instead of 12.5 %, and about three times as much overnight.
 

@@ -188,6 +188,11 @@ display:
       auto now = id(ha_time).now();
       char updated[8] = "--:--";
       if (now.is_valid()) now.strftime(updated, sizeof(updated), "%H:%M");
+      // "Updated 20:46", or in button-only mode (the page stays until the
+      // power button is pressed) "20:46 · press power"
+      bool manual = id(button_only).has_state() && id(button_only).state;
+      char stamp[32];
+      snprintf(stamp, sizeof(stamp), manual ? "%s · press power" : "Updated %s", updated);
       bool has_battery = id(battery_level).has_state();
       float battery = has_battery ? id(battery_level).state : 100.0f;
       bool usb = id(usb_power).state;
@@ -195,7 +200,7 @@ display:
         it.filled_rectangle(0, H - 64, W, 64);
         it.image(M, H - 50, id(icon_battery_low), COLOR_OFF);
         it.printf(M + 44, H - 54, id(font_label), COLOR_OFF, "Battery %.0f%% – please charge", battery);
-        it.printf(M + 44, H - 26, id(font_small), COLOR_OFF, "Updated %s", updated);
+        it.printf(M + 44, H - 26, id(font_small), COLOR_OFF, "%s", stamp);
       } else {
         rule(H - 44);
         std::string power;
@@ -209,9 +214,9 @@ display:
           power = power.empty() ? state : power + " " + state;
         }
         if (power.empty()) {
-          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s", updated);
+          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "%s", stamp);
         } else {
-          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "Updated %s  ·  %s", updated, power.c_str());
+          it.printf(W / 2, H - 34, id(font_small), TextAlign::TOP_CENTER, "%s  ·  %s", stamp, power.c_str());
         }
       }
 

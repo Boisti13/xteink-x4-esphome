@@ -8,6 +8,8 @@
 #
 # Wake cycle: wake on the full hour, except 23:00–6:00 (or on the power button), connect, wait for
 # the values from Home Assistant, draw the page once, go back to deep sleep.
+# input_boolean.xteink_x4_button_only drops the hourly wakes: the X4 then
+# sleeps until the power button is pressed.
 # input_boolean.xteink_x4_keep_awake in Home Assistant keeps it awake for OTA.
 
 substitutions:
@@ -74,7 +76,7 @@ esphome:
                   lambda: |-
                     return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
                            id(ha_medicine).has_state() && id(ha_supplements).has_state() &&
-                           id(landscape).has_state();
+                           id(landscape).has_state() && id(button_only).has_state();
                 timeout: 10s
             # Attributes arrive in the same burst as the states
             - delay: 200ms
@@ -137,8 +139,8 @@ time:
 
 deep_sleep:
   id: deep_sleep_ctrl
-  # Fallback; go_to_sleep sleeps until the next full hour outside the quiet hours
-  sleep_duration: 60min
+  # No default sleep_duration: go_to_sleep sets one (next full hour outside
+  # the quiet hours), except in button-only mode, where only the pin wakes it
   # Power button (active low) wakes it at once
   wakeup_pin:
     number: GPIO3
@@ -177,9 +179,19 @@ script:
                 state: !lambda "return millis() / 1000.0f;"
             - delay: 300ms
             - lambda: xteink_hold_power_latch();
-            - deep_sleep.enter:
-                id: deep_sleep_ctrl
-                sleep_duration: !lambda "return xteink_ms_to_next_wake(id(ha_time).now(), ${quiet_start}, ${quiet_end});"
+            # Button-only mode: no timer, only the power button wakes it.
+            # Without an answer from Home Assistant keep waking hourly.
+            - if:
+                condition:
+                  lambda: "return id(button_only).has_state() && id(button_only).state;"
+                then:
+                  - logger.log: "Button-only mode, sleeping until the power button"
+                  - deep_sleep.enter:
+                      id: deep_sleep_ctrl
+                else:
+                  - deep_sleep.enter:
+                      id: deep_sleep_ctrl
+                      sleep_duration: !lambda "return xteink_ms_to_next_wake(id(ha_time).now(), ${quiet_start}, ${quiet_end});"
 
 packages:
   fonts: !include xteink_x4_modules/fonts.yaml

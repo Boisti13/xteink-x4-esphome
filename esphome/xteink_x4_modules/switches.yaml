@@ -42,3 +42,21 @@ switch:
           action: input_boolean.turn_off
           data:
             entity_id: input_boolean.xteink_x4_landscape
+
+  # Wake only on the power button (no hourly wakes)
+  - platform: template
+    id: button_only_switch
+    name: "Button only"
+    icon: mdi:gesture-tap-button
+    entity_category: config
+    lambda: "return id(button_only).has_state() && id(button_only).state;"
+    turn_on_action:
+      - homeassistant.action:
+          action: input_boolean.turn_on
+          data:
+            entity_id: input_boolean.xteink_x4_button_only
+    turn_off_action:
+      - homeassistant.action:
+          action: input_boolean.turn_off
+          data:
+            entity_id: input_boolean.xteink_x4_button_only

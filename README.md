@@ -22,6 +22,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
 - **Medicine and supplements today**: every dose with time, name and amount, and how many — so nobody gives a second dose by mistake
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
+- **Button only** mode: no hourly wakes at all — the X4 sleeps like switched off until you press the power button, then draws a fresh page and sleeps again. A switch on the device page (or `input_boolean.xteink_x4_button_only`) turns it on and off
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
 - **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
 - **Outside temperature** at the top right (e.g. *16.5°*), so you know how warmly to dress the baby — from any outdoor sensor in Home Assistant
@@ -56,6 +57,11 @@ into a black bar:
 
 Because the page is drawn once an hour, *awake for 0:56* is as of the time in
 the footer (*Updated 20:46*). Press the power button for a fresh one.
+
+In **button only** mode the X4 doesn't wake on the hour: it sleeps until
+the power button is pressed, and the footer says so (*20:46 · press power*).
+The switch takes effect when the X4 next goes to sleep; to go back to hourly
+wakes, switch it off and press the power button once.
 
 ## Install
 
@@ -123,6 +129,7 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_supplements` | doses today | `lines`, as above |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
 | `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
+| `input_boolean.xteink_x4_button_only` | on = wake only on the power button, off = every full hour | |
 | `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements` | the raw API answers | |
 
 "Today" is since midnight in Home Assistant's time zone.
@@ -185,8 +192,8 @@ esphome/
     fonts.yaml / images.yaml  # Roboto, Material Design Icons
     sensors.yaml              # battery voltage and level, Wi-Fi, wake times
     text_sensors.yaml         # values from Home Assistant
-    binary_sensors.yaml       # seven buttons, keep awake
-    switches.yaml             # Keep awake and Landscape on the device page
+    binary_sensors.yaml       # seven buttons, Home Assistant switches
+    switches.yaml             # Keep awake, Landscape, Button only on the device page
     power.h                   # power latch, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
