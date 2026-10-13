@@ -1,12 +1,18 @@
 sensor:
   # Battery voltage: GPIO0 through a 1:2 divider. Read on every wake (the
   # first reading comes right at boot), averaged over 16 samples.
-  - platform: adc
+  # Read with Arduino's analogReadMilliVolts(), like the button driver reads
+  # GPIO1/GPIO2: ESPHome's adc sensor would claim the ADC for itself, and
+  # the buttons then read 0 (Button 4 and Button down stuck "on").
+  - platform: template
     id: battery_voltage
     name: "Battery voltage"
-    pin: GPIO0
-    attenuation: 12db
-    samples: 16
+    unit_of_measurement: V
+    lambda: |-
+      analogSetPinAttenuation(0, ADC_11db);
+      uint32_t mv = 0;
+      for (int i = 0; i < 16; i++) mv += analogReadMilliVolts(0);
+      return mv / 16 / 1000.0f;
     update_interval: 60s
     accuracy_decimals: 2
     device_class: voltage
