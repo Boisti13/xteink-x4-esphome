@@ -4,6 +4,9 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+### Under the hood
+- Config checks run on the ESPHome build server (`claude-setup/scripts/esphome-check.sh`, see `CLAUDE.md`); `secrets.example.yaml` has a valid dummy API key so `esphome config` works with it.
+
 ## v0.3.0 — 2026-10-13
 
 ### Added
