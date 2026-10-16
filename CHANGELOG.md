@@ -2,7 +2,7 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](https://semver.org/); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v0.4.0 — 2026-10-16
 
 ### Added
 - **Power off** wake mode: the X4 really switches itself off between power-button presses, as the CrossPoint reader firmware does — GPIO13 goes low and disconnects the battery, so it draws next to nothing instead of the ~4–5 mA it draws in deep sleep. The power button switches it back on; that start skips the setup screen and draws a fresh page. On USB power it can't switch off and sleeps like Button only.
