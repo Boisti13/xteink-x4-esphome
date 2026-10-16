@@ -59,7 +59,8 @@ rest:
           - activities
 
 ###############################################################################
-# Keep the display awake (for OTA updates and testing), screen orientation
+# Keep the display awake (for OTA updates and testing), screen orientation,
+# wake mode
 ###############################################################################
 input_boolean:
   xteink_x4_keep_awake:
@@ -72,11 +73,19 @@ input_boolean:
     name: Xteink X4 Landscape
     icon: mdi:phone-rotate-landscape
 
-  # On = no hourly wakes: the X4 sleeps until its power button is pressed
-  # (like switched off); off = wake every full hour. Read on every wake.
-  xteink_x4_button_only:
-    name: Xteink X4 Button only
-    icon: mdi:gesture-tap-button
+# How the X4 sleeps, read on every wake:
+#   Hourly       wake every full hour (not at night)
+#   Button only  no hourly wakes, deep sleep until the power button
+#   Power off    battery cut until the power button switches it back on:
+#                draws nothing while off (on USB it sleeps like Button only)
+input_select:
+  xteink_x4_wake_mode:
+    name: Xteink X4 Wake mode
+    icon: mdi:power-sleep
+    options:
+      - Hourly
+      - Button only
+      - Power off
 
 ###############################################################################
 # Display-ready values. Times are local, durations H:MM.

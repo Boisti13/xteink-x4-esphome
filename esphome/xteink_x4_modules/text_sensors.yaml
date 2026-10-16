@@ -67,3 +67,18 @@ text_sensor:
     entity_category: diagnostic
     icon: mdi:micro-sd
     update_interval: never
+
+  # input_select.xteink_x4_wake_mode: Hourly, Button only (deep sleep until
+  # the power button) or Power off (battery cut until the power button).
+  # Read on every wake, takes effect at the next sleep. Switched while the
+  # X4 is awake, the footer is redrawn to match.
+  - platform: homeassistant
+    id: wake_mode
+    entity_id: input_select.xteink_x4_wake_mode
+    on_value:
+      - lambda: "id(wake_mode_select).publish_state(x);"
+      - if:
+          condition:
+            lambda: "return !id(setup_screen);"
+          then:
+            - component.update: epaper_display

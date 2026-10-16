@@ -1,4 +1,5 @@
-# Switches on the device page in Home Assistant. Each mirrors a helper from
+# Switches and the Wake mode select on the device page in Home Assistant.
+# Each mirrors a helper from
 # packages/xteink_x4.yaml, which is what the device reads on every wake: the
 # helper can be switched while the X4 sleeps, these switches only while
 # it's awake. They need "Allow the device to perform Home Assistant actions".
@@ -43,20 +44,22 @@ switch:
           data:
             entity_id: input_boolean.xteink_x4_landscape
 
-  # Wake only on the power button (no hourly wakes)
+# Wake mode: Hourly, Button only or Power off. Mirrors
+# input_select.xteink_x4_wake_mode (the wake_mode text sensor publishes its
+# state here).
+select:
   - platform: template
-    id: button_only_switch
-    name: "Button only"
-    icon: mdi:gesture-tap-button
+    id: wake_mode_select
+    name: "Wake mode"
+    icon: mdi:power-sleep
     entity_category: config
-    lambda: "return id(button_only).has_state() && id(button_only).state;"
-    turn_on_action:
+    options:
+      - Hourly
+      - Button only
+      - Power off
+    set_action:
       - homeassistant.action:
-          action: input_boolean.turn_on
+          action: input_select.select_option
           data:
-            entity_id: input_boolean.xteink_x4_button_only
-    turn_off_action:
-      - homeassistant.action:
-          action: input_boolean.turn_off
-          data:
-            entity_id: input_boolean.xteink_x4_button_only
+            entity_id: input_select.xteink_x4_wake_mode
+            option: !lambda "return x;"

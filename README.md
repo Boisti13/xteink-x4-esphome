@@ -22,7 +22,10 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
 - **Medicine and supplements today**: every dose with time, name and amount, and how many — so nobody gives a second dose by mistake
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
-- **Button only** mode: no hourly wakes at all — the X4 sleeps like switched off until you press the power button, then draws a fresh page and sleeps again. A switch on the device page (or `input_boolean.xteink_x4_button_only`) turns it on and off
+- **Three wake modes**, picked with *Wake mode* on the device page (or `input_select.xteink_x4_wake_mode`):
+  - **Hourly**: a fresh page every full hour, as above
+  - **Button only**: no hourly wakes — deep sleep until you press the power button, then a fresh page and back to sleep
+  - **Power off**: like Button only, but the X4 really switches off between presses (the battery is disconnected, as the CrossPoint reader firmware does), so it holds its charge for weeks instead of days
 - **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
 - **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
 - **Outside temperature** at the top right (e.g. *16.5°*), so you know how warmly to dress the baby — from any outdoor sensor in Home Assistant
@@ -58,10 +61,14 @@ into a black bar:
 Because the page is drawn once an hour, *awake for 0:56* is as of the time in
 the footer (*Updated 20:46*). Press the power button for a fresh one.
 
-In **button only** mode the X4 doesn't wake on the hour: it sleeps until
-the power button is pressed, and the footer says so (*20:46 · press power*).
-The switch takes effect when the X4 next goes to sleep; to go back to hourly
-wakes, switch it off and press the power button once.
+In **Button only** and **Power off** mode the X4 doesn't wake on the hour:
+it waits for the power button, and the footer says so (*20:46 · press
+power*). In Power off mode it switches itself off instead of sleeping and
+the power button switches it back on — a full start, so it takes a moment
+longer, but it skips the setup screen. While USB is plugged in it can't
+switch off and sleeps like Button only. A new wake mode takes effect when
+the X4 next goes to sleep; to go back to Hourly, pick it and press the
+power button once.
 
 ## Install
 
@@ -129,7 +136,7 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_supplements` | doses today | `lines`, as above |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
 | `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
-| `input_boolean.xteink_x4_button_only` | on = wake only on the power button, off = every full hour | |
+| `input_select.xteink_x4_wake_mode` | *Hourly*, *Button only* (deep sleep until the power button) or *Power off* (switched off until the power button) | |
 | `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements` | the raw API answers | |
 
 "Today" is since midnight in Home Assistant's time zone.
@@ -150,6 +157,8 @@ so it drops into its low-power idle; whether that helps is being measured):
 
 | Wakes | Lasts about |
 |---|---|
+| Power off mode | weeks — switched off, it draws next to nothing |
+| Button only mode | about 5–6 days, nearly all of it spent asleep |
 | every hour, 6:00–22:00 (this config) | a week |
 | every 10 minutes | 4 days |
 | every minute | 1 day |
@@ -195,8 +204,8 @@ esphome/
     sensors.yaml              # battery voltage and level, Wi-Fi, wake times
     text_sensors.yaml         # values from Home Assistant
     binary_sensors.yaml       # seven buttons, Home Assistant switches
-    switches.yaml             # Keep awake, Landscape, Button only on the device page
-    power.h                   # power latch, time to the next wake
+    switches.yaml             # Keep awake, Landscape, Wake mode on the device page
+    power.h                   # power latch and switching off, SD card idle, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
 docs/

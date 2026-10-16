@@ -4,11 +4,16 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+### Added
+- **Power off** wake mode: the X4 really switches itself off between power-button presses, as the CrossPoint reader firmware does — GPIO13 goes low and disconnects the battery, so it draws next to nothing instead of the ~4–5 mA it draws in deep sleep. The power button switches it back on; that start skips the setup screen and draws a fresh page. On USB power it can't switch off and sleeps like Button only.
+
 ### Changed
+- **Wake mode select** instead of the *Button only* switch: `input_select.xteink_x4_wake_mode` (*Hourly*, *Button only*, *Power off*), also as *Wake mode* on the X4's device page. **Replaces `input_boolean.xteink_x4_button_only`**: after updating the package, pick the mode again (the old helper is gone; anything that switched it needs the new select).
 - **microSD card put to rest before sleep (testing whether it saves battery)**: the card is powered all through deep sleep, but nothing ever initialised it, and an uninitialised card idles at a higher current. Before each sleep the X4 now initialises it in SPI mode so it drops into its own low-power idle. A new *SD card* sensor shows what the card answered (*idle*, *no card*, *no answer*). Before: about 4–5 mA in deep sleep, half the battery in three days in button-only mode.
 
 ### Under the hood
 - `power.h`: `xteink_sd_card_idle()` (CMD0, CMD8, ACMD41 at 400 kHz, chip select GPIO12) runs in `go_to_sleep`. No pins are held through sleep, unlike the panel attempt undone in v0.3.0.
+- `power.h`: `xteink_power_off()` sets an "off" flag in flash (NVS) and holds GPIO13 low; at the next start `xteink_cold_boot()` reads and clears the flag and releases GPIO13, so the power-button start isn't taken for a fresh flash.
 - Config checks run on the ESPHome build server (`claude-setup/scripts/esphome-check.sh`, see `CLAUDE.md`); `secrets.example.yaml` has a valid dummy API key so `esphome config` works with it.
 
 ## v0.3.0 — 2026-10-13

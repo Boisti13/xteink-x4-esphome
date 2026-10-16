@@ -8,8 +8,10 @@
 #
 # Wake cycle: wake on the full hour, except 23:00–6:00 (or on the power button), connect, wait for
 # the values from Home Assistant, draw the page once, go back to deep sleep.
-# input_boolean.xteink_x4_button_only drops the hourly wakes: the X4 then
-# sleeps until the power button is pressed.
+# input_select.xteink_x4_wake_mode picks how it sleeps: Hourly as above,
+# Button only (no timer, deep sleep until the power button) or Power off
+# (the battery is cut until the power button switches it back on, and
+# that start skips the setup screen).
 # input_boolean.xteink_x4_keep_awake in Home Assistant keeps it awake for OTA.
 
 substitutions:
@@ -76,7 +78,7 @@ esphome:
                   lambda: |-
                     return id(ha_sleep).has_state() && id(ha_diaper).has_state() &&
                            id(ha_medicine).has_state() && id(ha_supplements).has_state() &&
-                           id(landscape).has_state() && id(button_only).has_state();
+                           id(landscape).has_state() && id(wake_mode).has_state();
                 timeout: 10s
             # Attributes arrive in the same burst as the states
             - delay: 200ms
@@ -140,7 +142,7 @@ time:
 deep_sleep:
   id: deep_sleep_ctrl
   # No default sleep_duration: go_to_sleep sets one (next full hour outside
-  # the quiet hours), except in button-only mode, where only the pin wakes it
+  # the quiet hours), except in Button only / Power off, where only the pin wakes it
   # Power button (active low) wakes it at once
   wakeup_pin:
     number: GPIO3
@@ -182,19 +184,29 @@ script:
                 state: !lambda "return xteink_sd_card_idle();"
             - delay: 300ms
             - lambda: xteink_hold_power_latch();
-            # Button-only mode: no timer, only the power button wakes it.
-            # Without an answer from Home Assistant keep waking hourly.
+            # Button only: no timer, only the power button wakes it.
+            # Power off: cut the battery; on USB power it sleeps like Button
+            # only. Without an answer from Home Assistant keep waking hourly.
             - if:
                 condition:
-                  lambda: "return id(button_only).has_state() && id(button_only).state;"
+                  lambda: 'return id(wake_mode).state == "Power off";'
                 then:
-                  - logger.log: "Button-only mode, sleeping until the power button"
+                  - logger.log: "Power off mode, switching off until the power button"
+                  - lambda: xteink_power_off();
                   - deep_sleep.enter:
                       id: deep_sleep_ctrl
                 else:
-                  - deep_sleep.enter:
-                      id: deep_sleep_ctrl
-                      sleep_duration: !lambda "return xteink_ms_to_next_wake(id(ha_time).now(), ${quiet_start}, ${quiet_end});"
+                  - if:
+                      condition:
+                        lambda: 'return id(wake_mode).state == "Button only";'
+                      then:
+                        - logger.log: "Button-only mode, sleeping until the power button"
+                        - deep_sleep.enter:
+                            id: deep_sleep_ctrl
+                      else:
+                        - deep_sleep.enter:
+                            id: deep_sleep_ctrl
+                            sleep_duration: !lambda "return xteink_ms_to_next_wake(id(ha_time).now(), ${quiet_start}, ${quiet_end});"
 
 packages:
   fonts: !include xteink_x4_modules/fonts.yaml

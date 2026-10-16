@@ -5,16 +5,67 @@
 #include <SPI.h>
 #include "driver/gpio.h"
 #include "esp_sleep.h"
+#include "nvs.h"
 
-// True after flashing, reset or power-on; false after a wake from deep sleep
-// (timer or power button).
+// "Power off" mode cuts the battery, so the next start is a power-on like
+// after flashing. A flag in flash tells the two apart; set right before
+// switching off, cleared at the next start.
+inline void xteink_set_switched_off(bool on) {
+  nvs_handle_t h;
+  if (nvs_open("xteink", NVS_READWRITE, &h) != ESP_OK)
+    return;
+  nvs_set_u8(h, "off", on ? 1 : 0);
+  nvs_commit(h);
+  nvs_close(h);
+}
+
+// Read once per start: was the X4 switched off by "Power off" mode?
+// Clears the flag, and releases GPIO13 in case it is still held low (the
+// battery wasn't cut because USB powered the X4).
+inline bool xteink_was_switched_off() {
+  static int cached = -1;
+  if (cached < 0) {
+    uint8_t off = 0;
+    nvs_handle_t h;
+    if (nvs_open("xteink", NVS_READONLY, &h) == ESP_OK) {
+      nvs_get_u8(h, "off", &off);
+      nvs_close(h);
+    }
+    cached = off ? 1 : 0;
+    if (off) {
+      xteink_set_switched_off(false);
+      gpio_hold_dis(GPIO_NUM_13);
+      gpio_set_direction(GPIO_NUM_13, GPIO_MODE_INPUT);
+    }
+  }
+  return cached == 1;
+}
+
+// True after flashing, reset or plugging in; false after a wake from deep
+// sleep (timer or power button) and after the power button switched the X4
+// back on in "Power off" mode.
 inline bool xteink_cold_boot() {
+  if (xteink_was_switched_off())
+    return false;
   return esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED;
 }
 
 // The X4 cuts its own power when the ESP32 goes into deep sleep unless the
 // power latch on GPIO13 is held. Hold it, don't drive it.
 inline void xteink_hold_power_latch() {
+  gpio_hold_en(GPIO_NUM_13);
+  gpio_deep_sleep_hold_en();
+}
+
+// "Power off" mode: drive GPIO13 low, which disconnects the battery (as
+// CrossPoint does), so the X4 draws nothing until the power button switches
+// it back on. On USB power the board stays up; the deep sleep that follows
+// then waits for the power button instead.
+inline void xteink_power_off() {
+  xteink_set_switched_off(true);
+  gpio_hold_dis(GPIO_NUM_13);
+  gpio_set_direction(GPIO_NUM_13, GPIO_MODE_OUTPUT);
+  gpio_set_level(GPIO_NUM_13, 0);
   gpio_hold_en(GPIO_NUM_13);
   gpio_deep_sleep_hold_en();
 }
