@@ -58,3 +58,12 @@ text_sensor:
     id: ha_supplements_lines
     entity_id: sensor.xteink_x4_supplements
     attribute: lines
+
+  # What the microSD card answered when it was put into its low-power idle
+  # before the last sleep: "idle", "no card" or "no answer"
+  - platform: template
+    id: sd_card
+    name: "SD card"
+    entity_category: diagnostic
+    icon: mdi:micro-sd
+    update_interval: never

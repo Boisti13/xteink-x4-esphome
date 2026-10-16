@@ -169,14 +169,17 @@ script:
           then:
             - logger.log: "Keep awake is on, staying awake"
           else:
-            # Report how long this wake took, then give the API a moment to
-            # send it
+            # Report how long this wake took and put the SD card into its
+            # low-power idle, then give the API a moment to send it all
             - sensor.template.publish:
                 id: wake_connected
                 state: !lambda "return id(connected_ms) / 1000.0f;"
             - sensor.template.publish:
                 id: wake_total
                 state: !lambda "return millis() / 1000.0f;"
+            - text_sensor.template.publish:
+                id: sd_card
+                state: !lambda "return xteink_sd_card_idle();"
             - delay: 300ms
             - lambda: xteink_hold_power_latch();
             # Button-only mode: no timer, only the power button wakes it.

@@ -4,7 +4,11 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+### Changed
+- **microSD card put to rest before sleep (testing whether it saves battery)**: the card is powered all through deep sleep, but nothing ever initialised it, and an uninitialised card idles at a higher current. Before each sleep the X4 now initialises it in SPI mode so it drops into its own low-power idle. A new *SD card* sensor shows what the card answered (*idle*, *no card*, *no answer*). Before: about 4–5 mA in deep sleep, half the battery in three days in button-only mode.
+
 ### Under the hood
+- `power.h`: `xteink_sd_card_idle()` (CMD0, CMD8, ACMD41 at 400 kHz, chip select GPIO12) runs in `go_to_sleep`. No pins are held through sleep, unlike the panel attempt undone in v0.3.0.
 - Config checks run on the ESPHome build server (`claude-setup/scripts/esphome-check.sh`, see `CLAUDE.md`); `secrets.example.yaml` has a valid dummy API key so `esphome config` works with it.
 
 ## v0.3.0 — 2026-10-13

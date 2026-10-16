@@ -136,6 +136,7 @@ the device goes back to sleep at once.
 
 **From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_battery_voltage` (V), `sensor.xteink_x4_wi_fi_signal`,
 `sensor.xteink_x4_wake_connected_after` and `sensor.xteink_x4_wake_total` (seconds per wake),
+`sensor.xteink_x4_sd_card` (what the microSD card answered before the last sleep: *idle*, *no card*, *no answer*),
 `binary_sensor.xteink_x4_usb_power` (on while USB is plugged in),
 and the seven buttons as `binary_sensor.xteink_x4_button_1` … `_button_4`,
 `_button_up`, `_button_down`, `_power_button` (only while it's awake).
@@ -144,7 +145,8 @@ and the seven buttons as `binary_sensor.xteink_x4_button_1` … `_button_4`,
 
 The X4 still draws about 4 mA in deep sleep (the board leaks; see
 [jumpit.eu](https://jumpit.eu/en/practice/xteink-x4-home-assistant-display/)),
-so on its 650 mAh battery:
+so on its 650 mAh battery (before each sleep the microSD card is initialised
+so it drops into its low-power idle; whether that helps is being measured):
 
 | Wakes | Lasts about |
 |---|---|
