@@ -2,6 +2,8 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](https://semver.org/); each release is tagged `vX.Y.Z` on `main`.
 
+## Unreleased
+
 ## v0.4.0 — 2026-10-16
 
 ### Added
