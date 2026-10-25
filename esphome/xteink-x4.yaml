@@ -179,9 +179,10 @@ script:
             - sensor.template.publish:
                 id: wake_total
                 state: !lambda "return millis() / 1000.0f;"
-            - text_sensor.template.publish:
-                id: sd_card
-                state: !lambda "return xteink_sd_card_idle();"
+            # A plain lambda, not text_sensor.template.publish: ESPHome
+            # 2026.10 emits a publish's state lambda above the includes, where
+            # power.h's functions aren't declared yet
+            - lambda: id(sd_card).publish_state(xteink_sd_card_idle());
             - delay: 300ms
             - lambda: xteink_hold_power_latch();
             # Button only: no timer, only the power button wakes it.
