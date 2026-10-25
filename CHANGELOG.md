@@ -11,7 +11,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 - The medicine list shows **one line per medicine**, its latest dose, from the **last 24 hours** instead of every dose since midnight — so a dose late in the evening still shows its next time after midnight. The amount is gone from medicine lines (it's the same every time); supplements keep it. *today: N* still counts every dose since midnight.
 
 ### Fixed
-- **Build failed with ESPHome 2026.10** (`'xteink_sd_card_idle' was not declared in this scope`): 2026.10 puts a `text_sensor.template.publish` state lambda above the `includes:` in the generated code. The SD card state is now published from a plain lambda.
+- **Build failed with ESPHome 2026.10** (`'xteink_sd_card_idle' was not declared in this scope`): 2026.10 puts a `*.template.publish` state lambda at the top of the generated code, above the `includes:` and where `millis()` is ambiguous. The wake times and the SD card state are now published from one plain lambda.
 
 ## v0.4.0 — 2026-10-16
 

@@ -173,16 +173,13 @@ script:
           else:
             # Report how long this wake took and put the SD card into its
             # low-power idle, then give the API a moment to send it all
-            - sensor.template.publish:
-                id: wake_connected
-                state: !lambda "return id(connected_ms) / 1000.0f;"
-            - sensor.template.publish:
-                id: wake_total
-                state: !lambda "return millis() / 1000.0f;"
-            # A plain lambda, not text_sensor.template.publish: ESPHome
-            # 2026.10 emits a publish's state lambda above the includes, where
-            # power.h's functions aren't declared yet
-            - lambda: id(sd_card).publish_state(xteink_sd_card_idle());
+            # A plain lambda, not *.template.publish: ESPHome 2026.10 emits a
+            # publish's state lambda at the top of main.cpp, above power.h
+            # and where millis() is ambiguous (Arduino's and ESPHome's)
+            - lambda: |-
+                id(wake_connected).publish_state(id(connected_ms) / 1000.0f);
+                id(wake_total).publish_state(millis() / 1000.0f);
+                id(sd_card).publish_state(xteink_sd_card_idle());
             - delay: 300ms
             - lambda: xteink_hold_power_latch();
             # Button only: no timer, only the power button wakes it.
