@@ -41,13 +41,13 @@ Sprout Track API                 Home Assistant                       Xteink X4 
 /status          ──every 60 s──▶  packages/xteink_x4.yaml              wakes every full hour
 /activities?type=medicine         sensor.xteink_x4_sleep      ──API──▶  (not 23–6) or on the button,
 /activities?type=supplement       sensor.xteink_x4_diaper               draws the page once,
-                                  sensor.xteink_x4_medicine             sleeps again
-                                  sensor.xteink_x4_supplements
+/reference?type=medicines         sensor.xteink_x4_medicine             sleeps again
+     └─ every 10 min              sensor.xteink_x4_supplements
 ```
 
-Home Assistant does all the work — it polls Sprout Track, picks out today's
-entries, formats times and durations — so the device only prints ready-made
-text. A wake takes about 10 seconds.
+Home Assistant does all the work — it polls Sprout Track, picks out the
+entries to show, works out when each medicine may be given again, formats
+times and durations — so the device only prints ready-made text. A wake takes about 10 seconds.
 
 The last wake of the day is at 22:00, the first at 6:00. Change the quiet
 hours with `quiet_start` and `quiet_end` at the top of
@@ -141,7 +141,7 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_sleep` | awake/asleep for, `H:MM` | `label` (*Awake for* / *Asleep for*), `since` (`HH:MM`) |
 | `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `wet`, `dirty` (today) |
 | `sensor.xteink_x4_medicine` | doses today | `lines`: one per medicine given in the last 24 h, its latest dose, newest first, `HH:MM\|name\|next` (next dose allowed at `HH:MM`, `now`, or empty without a minimum time) |
-| `sensor.xteink_x4_supplements` | doses today | `lines`, as above |
+| `sensor.xteink_x4_supplements` | doses today | `lines`: one per dose today, newest first, `HH:MM\|name\|amount` |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
 | `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
 | `input_select.xteink_x4_wake_mode` | *Hourly*, *Button only* (deep sleep until the power button) or *Power off* (switched off until the power button) | |
