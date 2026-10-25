@@ -11,6 +11,9 @@
 #   sprout_track_status_url:     "http://<host>:3000/api/hooks/v1/babies/<baby-id>/status"
 #   sprout_track_medicine_url:   "…/babies/<baby-id>/activities?type=medicine&limit=20"
 #   sprout_track_supplement_url: "…/babies/<baby-id>/activities?type=supplement&limit=20"
+#   sprout_track_medicines_url:  "…/babies/<baby-id>/reference?type=medicines"
+#     (the medicine list with each one's minimum time between doses,
+#     doseMinTime; needs a Sprout Track version whose hooks API returns it)
 ###############################################################################
 
 ###############################################################################
@@ -44,6 +47,21 @@ rest:
         json_attributes_path: "$.data"
         json_attributes:
           - activities
+
+  # The medicines themselves, for their minimum time between doses
+  # (doseMinTime, "DD:HH:MM"). Rarely changes: every 10 minutes.
+  - resource: !secret sprout_track_medicines_url
+    headers:
+      Authorization: !secret sprout_track_auth
+    scan_interval: 600
+    sensor:
+      - name: "Xteink X4 Sprout Medicines"
+        unique_id: xteink_x4_sprout_medicines
+        icon: mdi:medical-bag
+        value_template: "{{ value_json.data.medicines | count }}"
+        json_attributes_path: "$.data"
+        json_attributes:
+          - medicines
 
   - resource: !secret sprout_track_supplement_url
     headers:
@@ -168,8 +186,11 @@ template:
             {% set c = (state_attr('sensor.xteink_x4_sprout_status', 'dailyCounts') or {}).get('diapersByType', {}) %}
             {{ c.get('DIRTY', 0) + c.get('BOTH', 0) }}
 
-      # State: doses today. Attribute lines: newest first, one per line,
-      # "HH:MM|name|dose".
+      # State: doses today (since midnight). Attribute lines: one per
+      # medicine given in the last 24 hours, its latest dose, newest first:
+      # "HH:MM|name|next" — next is when the next dose is allowed (HH:MM),
+      # "now" once that time has passed, or empty for medicines without a
+      # minimum time between doses in Sprout Track.
       - name: "Xteink X4 Medicine"
         unique_id: xteink_x4_medicine
         icon: mdi:pill
@@ -182,12 +203,24 @@ template:
         attributes:
           lines: >
             {% set acts = state_attr('sensor.xteink_x4_sprout_medicine', 'activities') or [] %}
-            {% set ns = namespace(lines=[]) %}
-            {% for a in acts if (as_datetime(a.time) | as_local) >= today_at() %}
-              {% set d = a.details %}
-              {% set u = (d.unitAbbr or '') | lower %}
-              {% if d.doseAmount != 1 and u in ['pill', 'drop'] %}{% set u = u ~ 's' %}{% endif %}
-              {% set ns.lines = ns.lines + [(as_datetime(a.time) | as_local).strftime('%H:%M') ~ '|' ~ d.medicineName ~ '|' ~ (d.doseAmount | string) ~ ' ' ~ u] %}
+            {% set meds = state_attr('sensor.xteink_x4_sprout_medicines', 'medicines') or [] %}
+            {% set ns = namespace(lines=[], seen=[]) %}
+            {% for a in acts | selectattr('time', 'defined') | sort(attribute='time', reverse=true)
+                 if (as_datetime(a.time) | as_local) >= now() - timedelta(hours=24) %}
+              {% set name = a.details.medicineName %}
+              {% if name not in ns.seen %}
+                {% set ns.seen = ns.seen + [name] %}
+                {% set t = as_datetime(a.time) | as_local %}
+                {% set gap = (meds | selectattr('name', 'eq', name) | map(attribute='doseMinTime') | first) or '' %}
+                {% set p = gap.split(':') | map('int', 0) | list %}
+                {% set mins = (p[0] * 1440 + p[1] * 60 + p[2]) if p | count == 3 else 0 %}
+                {% set next = '' %}
+                {% if mins > 0 %}
+                  {% set at = t + timedelta(minutes=mins) %}
+                  {% set next = 'now' if at <= now() else at.strftime('%H:%M') %}
+                {% endif %}
+                {% set ns.lines = ns.lines + [t.strftime('%H:%M') ~ '|' ~ name ~ '|' ~ next] %}
+              {% endif %}
             {% endfor %}
             {{ ns.lines | join('\n') }}
 

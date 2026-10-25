@@ -4,6 +4,12 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+### Added
+- **Next dose** for medicine: each medicine line shows, under a small *next* label, when the next dose may be given (*11:12*), or **now** once that's allowed — from the minimum time between doses set for the medicine in Sprout Track. Needs the new secret `sprout_track_medicines_url` (`/reference?type=medicines`) and a Sprout Track whose hooks API returns `doseMinTime` (see README → Install).
+
+### Changed
+- The medicine list shows **one line per medicine**, its latest dose, from the **last 24 hours** instead of every dose since midnight — so a dose late in the evening still shows its next time after midnight. The amount is gone from medicine lines (it's the same every time); supplements keep it. *today: N* still counts every dose since midnight.
+
 ## v0.4.0 — 2026-10-16
 
 ### Added

@@ -20,7 +20,8 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 
 - **Awake for / asleep for** with the time it started — at a glance whether a nap is due
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
-- **Medicine and supplements today**: every dose with time, name and amount, and how many — so nobody gives a second dose by mistake
+- **Medicine: when the next dose is allowed**: one line per medicine given in the last 24 hours — its latest dose and, under *next*, the time the next dose may be given (or **now**), from the minimum time between doses set in Sprout Track; so nobody gives a dose too early
+- **Supplements today**: every dose with time, name and amount, and how many
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
 - **Three wake modes**, picked with *Wake mode* on the device page (or `input_select.xteink_x4_wake_mode`):
   - **Hourly**: a fresh page every full hour, as above
@@ -84,7 +85,14 @@ sprout_track_auth: "Bearer st_live_…"
 sprout_track_status_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/status"
 sprout_track_medicine_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=medicine&limit=20"
 sprout_track_supplement_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=supplement&limit=20"
+sprout_track_medicines_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/reference?type=medicines"
 ```
+
+The *next* times need the minimum time between doses (`doseMinTime`) in that
+last answer. Sprout Track's hooks API doesn't return it yet (reported
+upstream); add `doseMinTime: true` to the `select` in `getMedicines()` in
+`app/api/hooks/v1/babies/[babyId]/reference/route.ts` and rebuild. Without
+it the medicine lines just show no *next* time.
 
 **2. Home Assistant package.** Turn on packages once in `configuration.yaml`,
 if you haven't already:
@@ -132,12 +140,12 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_outdoor` | outside temperature, *16.5°* — from `sensor.virtual_outdoor_temperature`; point it at your own outdoor sensor | |
 | `sensor.xteink_x4_sleep` | awake/asleep for, `H:MM` | `label` (*Awake for* / *Asleep for*), `since` (`HH:MM`) |
 | `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `wet`, `dirty` (today) |
-| `sensor.xteink_x4_medicine` | doses today | `lines`: one per dose, newest first, `HH:MM\|name\|amount` |
+| `sensor.xteink_x4_medicine` | doses today | `lines`: one per medicine given in the last 24 h, its latest dose, newest first, `HH:MM\|name\|next` (next dose allowed at `HH:MM`, `now`, or empty without a minimum time) |
 | `sensor.xteink_x4_supplements` | doses today | `lines`, as above |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
 | `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
 | `input_select.xteink_x4_wake_mode` | *Hourly*, *Button only* (deep sleep until the power button) or *Power off* (switched off until the power button) | |
-| `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements` | the raw API answers | |
+| `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements`, `_sprout_medicines` | the raw API answers | |
 
 "Today" is since midnight in Home Assistant's time zone.
 

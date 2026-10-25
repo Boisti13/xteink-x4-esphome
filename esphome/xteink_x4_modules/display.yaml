@@ -62,9 +62,11 @@ display:
         return;
       }
 
-      // One "HH:MM|name|dose" list (medicine or supplements) in the column
+      // One "HH:MM|name|right" list (medicine or supplements) in the column
       // x0..x1; returns the next y. Landscape uses a smaller font for the
-      // entries, so names fit into the narrower column.
+      // entries, so names fit into the narrower column. right is the dose
+      // for supplements; for medicine (next_col) it is when the next dose
+      // is allowed ("11:12", "now" or empty), in bold under a "next" label.
       esphome::font::Font *LIST_FONT = LANDSCAPE ? id(font_list) : id(font_body);
       const int LIST_LINE = LANDSCAPE ? 31 : 34;
       const int TIME_W = LANDSCAPE ? 70 : 80;
@@ -74,7 +76,7 @@ display:
       const int HEAD_H = LANDSCAPE ? 54 : 52;
       auto section_list = [&](int x0, int x1, int y, int max_lines, esphome::image::Image *icon,
                               const char *title, esphome::text_sensor::TextSensor *count,
-                              esphome::text_sensor::TextSensor *lines) -> int {
+                              esphome::text_sensor::TextSensor *lines, bool next_col) -> int {
         it.image(x0, y, icon);
         it.print(x0 + 56, y + HEAD_Y, HEAD_FONT, title);
         std::string c = val(count);
@@ -82,6 +84,25 @@ display:
         y += HEAD_H;
 
         std::string all = val(lines);
+        // The "next" label only when at least one line has a next time
+        bool any_next = false;
+        if (next_col) {
+          size_t q = 0;
+          while ((q = all.find('|', q)) != std::string::npos) {
+            size_t r = all.find('|', q + 1);
+            if (r == std::string::npos) break;
+            if (r + 1 < all.size() && all[r + 1] != '\n') any_next = true;
+            size_t nl = all.find('\n', r);
+            if (nl == std::string::npos) break;
+            q = nl;
+          }
+        }
+        if (any_next) {
+          it.print(x1, y - 14, id(font_small), TextAlign::TOP_RIGHT, "next");
+          y += 12;
+        }
+        esphome::font::Font *RIGHT_FONT = next_col ? id(font_label) : LIST_FONT;
+        const int RIGHT_DY = next_col ? (LANDSCAPE ? 1 : 2) : 0;
         if (all.empty()) {
           it.print(x0, y, LIST_FONT, "None today");
           return y + LIST_LINE + 6;
@@ -102,10 +123,10 @@ display:
           std::string dose = (p2 == std::string::npos) ? "" : line.substr(p2 + 1);
 
           int bx, by, dose_w, bh;
-          it.get_text_bounds(0, 0, dose.c_str(), LIST_FONT, TextAlign::TOP_LEFT, &bx, &by, &dose_w, &bh);
+          it.get_text_bounds(0, 0, dose.c_str(), RIGHT_FONT, TextAlign::TOP_LEFT, &bx, &by, &dose_w, &bh);
           it.print(x0, y, LIST_FONT, t.c_str());
-          it.print(NAME_X, y, LIST_FONT, fit(name, LIST_FONT, x1 - dose_w - 12 - NAME_X).c_str());
-          it.print(x1, y, LIST_FONT, TextAlign::TOP_RIGHT, dose.c_str());
+          it.print(NAME_X, y, LIST_FONT, fit(name, LIST_FONT, x1 - (dose.empty() ? 0 : dose_w + 12) - NAME_X).c_str());
+          if (!dose.empty()) it.print(x1, y + RIGHT_DY, RIGHT_FONT, TextAlign::TOP_RIGHT, dose.c_str());
           y += LIST_LINE;
           shown++;
         }
@@ -169,18 +190,18 @@ display:
         const int MID = 360;
         section_sleep_diaper(M, MID - 20, 80);
         it.line(MID, 80, MID, H - 60);
-        int y = section_list(MID + 20, W - M, 80, 3, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+        int y = section_list(MID + 20, W - M, 80, 3, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
         it.line(MID + 20, y, W - M, y);
         // As many supplement lines as still fit above the footer
         int room = std::max(1, (H - 60 - (y + 16 + HEAD_H)) / LIST_LINE);
-        section_list(MID + 20, W - M, y + 16, std::min(3, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
+        section_list(MID + 20, W - M, y + 16, std::min(3, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
       } else {
         // One column, top to bottom
         section_sleep_diaper(M, W - M, 80);
         rule(378);
-        int y = section_list(M, W - M, 394, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines));
+        int y = section_list(M, W - M, 394, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
         rule(y);
-        section_list(M, W - M, y + 16, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines));
+        section_list(M, W - M, y + 16, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
       }
 
       // ---- Footer: last update, battery and charging; a black bar when
