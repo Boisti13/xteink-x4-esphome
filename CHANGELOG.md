@@ -2,7 +2,7 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](https://semver.org/); each release is tagged `vX.Y.Z` on `main`.
 
-## Unreleased
+## v0.5.0 — 2026-10-25
 
 ### Added
 - **Next dose** for medicine: each medicine line shows, under a small *next* label, when the next dose may be given (*11:12*), or **now** once that's allowed — from the minimum time between doses set for the medicine in Sprout Track. Needs the new secret `sprout_track_medicines_url` (`/reference?type=medicines`) and a Sprout Track whose hooks API returns `doseMinTime` (see README → Install).
