@@ -27,7 +27,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
   - **Hourly**: a fresh page every full hour, as above
   - **Button only**: no hourly wakes — deep sleep until you press the power button, then a fresh page and back to sleep
   - **Power off**: like Button only, but the X4 really switches off between presses (the battery is disconnected, as the CrossPoint reader firmware does), so it holds its charge for weeks instead of days
-- **One Home Assistant package** (`packages/xteink_x4.yaml`): the Sprout Track API calls and every display value; nothing to click together in the UI
+- **One Home Assistant package** (`packages/xteink_x4.yaml`): every display value, built from the [Sprout Track integration](https://github.com/Boisti13/ha-sprout-track)'s entities; nothing to click together in the UI, no API URLs or keys
 - **Battery in the footer** with *charging* while USB is plugged in; at 15 % or less the footer turns into a black **please charge** bar (adjustable with `battery_warning`)
 - **Outside temperature** at the top right (e.g. *16.5°*), so you know how warmly to dress the baby — from any outdoor sensor in Home Assistant
 - **Landscape or portrait**: two columns side by side, or one column top to bottom — a **Landscape** switch on the device page (or `input_boolean.xteink_x4_landscape`) changes it, no reflashing
@@ -37,17 +37,18 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 ## How it works
 
 ```
-Sprout Track API                 Home Assistant                       Xteink X4 (ESPHome)
-/status          ──every 60 s──▶  packages/xteink_x4.yaml              wakes every full hour
-/activities?type=medicine         sensor.xteink_x4_sleep      ──API──▶  (not 23–6) or on the button,
-/activities?type=supplement       sensor.xteink_x4_diaper               draws the page once,
-/reference?type=medicines         sensor.xteink_x4_medicine             sleeps again
-     └─ every 10 min              sensor.xteink_x4_supplements
+Sprout Track          Home Assistant                                       Xteink X4 (ESPHome)
+  hooks API  ──▶  Sprout Track integration  ──▶  packages/xteink_x4.yaml   wakes every full hour
+                  sensor.<baby>_last_diaper      sensor.xteink_x4_sleep  ──API──▶  (not 23–6) or on
+                  sensor.<baby>_awake_since      sensor.xteink_x4_diaper        the button, draws
+                  sensor.<baby>_medicines_today  sensor.xteink_x4_medicine      the page once,
+                  …                              sensor.xteink_x4_supplements   sleeps again
 ```
 
-Home Assistant does all the work — it polls Sprout Track, picks out the
-entries to show, works out when each medicine may be given again, formats
-times and durations — so the device only prints ready-made text. A wake takes about 10 seconds.
+Home Assistant does all the work — the integration fetches Sprout Track,
+works out when each medicine may be given again; the package picks out the
+entries to show and formats times and durations — so the device only prints
+ready-made text. A wake takes about 10 seconds.
 
 The last wake of the day is at 22:00, the first at 6:00. Change the quiet
 hours with `quiet_start` and `quiet_end` at the top of
@@ -74,30 +75,20 @@ power button once.
 ## Install
 
 You need Home Assistant with the **ESPHome Device Builder** app (add-on),
-a running [Sprout Track](https://github.com/Oak-and-Sprout/sprout-track) with an
-API key (*Settings → API*), an Xteink X4 and a USB-C cable.
+a running [Sprout Track](https://github.com/Oak-and-Sprout/sprout-track), an
+Xteink X4 and a USB-C cable.
 
-**1. Secrets.** Add to Home Assistant's `/config/secrets.yaml` (your Sprout
-Track address, baby ID and API key):
+**1. Sprout Track integration.** Install
+[ha-sprout-track](https://github.com/Boisti13/ha-sprout-track) (v0.2.0 or
+newer) through HACS and set it up with your Sprout Track address and an API
+key — its README has the steps. The dashboard shows the integration's first
+baby; with several babies, put the name in `pick` in *Xteink X4 Baby* in the
+package (`{% set pick = 'Emma' %}`).
 
-```yaml
-sprout_track_auth: "Bearer st_live_…"
-sprout_track_status_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/status?timezone=Europe/Berlin"
-sprout_track_medicine_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=medicine&limit=20"
-sprout_track_supplement_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=supplement&limit=20"
-sprout_track_medicines_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/reference?type=medicines"
-```
-
-Put your own time zone (as in *Settings → System → General*) after
-`timezone=`. Sprout Track counts *today* (wet and dirty diapers, sleep) in
-that zone; without it the server's zone is used, which is often UTC, so the
-day would start at 01:00 or 02:00 local time.
-
-The *next* times need the minimum time between doses (`doseMinTime`) in that
-last answer. Sprout Track's hooks API doesn't return it yet (reported
-upstream); add `doseMinTime: true` to the `select` in `getMedicines()` in
-`app/api/hooks/v1/babies/[babyId]/reference/route.ts` and rebuild. Without
-it the medicine lines just show no *next* time.
+The *next* times need the minimum time between doses (`doseMinTime`) from
+Sprout Track's hooks API, which released versions don't send yet
+([Oak-and-Sprout/sprout-track#298](https://github.com/Oak-and-Sprout/sprout-track/issues/298)).
+Without it the medicine lines just show no *next* time.
 
 **2. Home Assistant package.** Turn on packages once in `configuration.yaml`,
 if you haven't already:
@@ -150,7 +141,7 @@ the device goes back to sleep at once.
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
 | `input_boolean.xteink_x4_landscape` | on = landscape (two columns), off = portrait (one column) | |
 | `input_select.xteink_x4_wake_mode` | *Hourly*, *Button only* (deep sleep until the power button) or *Power off* (switched off until the power button) | |
-| `sensor.xteink_x4_sprout_status`, `_sprout_medicine`, `_sprout_supplements`, `_sprout_medicines` | the raw API answers | |
+| `sensor.xteink_x4_baby` | the baby shown: the start of its entity IDs (`emma`) | |
 
 "Today" is since midnight in Home Assistant's time zone.
 
