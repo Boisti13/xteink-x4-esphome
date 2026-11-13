@@ -4,6 +4,8 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+## v0.6.0 — 2026-11-13
+
 ### Changed
 - **Needs the [Sprout Track integration](https://github.com/Boisti13/ha-sprout-track) (v0.2.0 or newer) now**: the package builds every display value from the integration's entities instead of calling the Sprout Track API itself. Its four REST sensors (`sensor.xteink_x4_sprout_*`) and the five `sprout_track_*` secrets are gone — install and set up the integration, copy the new package, then delete those secrets and the four leftover entities. The display sensors keep their names and formats, so the device needs no new firmware.
 
