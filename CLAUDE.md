@@ -10,6 +10,11 @@
 - **Everything Home Assistant needs goes into `packages/xteink_x4.yaml`** —
   one file, no UI helpers, nothing in `configuration.yaml`. Entity IDs start
   with `xteink_x4_`.
+- **Sprout Track data comes from the integration**
+  ([ha-sprout-track](https://github.com/Boisti13/ha-sprout-track), v0.2.0+),
+  not from the API (since v0.6.0): templates read `sensor.<baby>_*` with the
+  baby from `sensor.xteink_x4_baby`. No API URLs or keys in the package.
+  Keep the `sensor.xteink_x4_*` names and formats: the firmware reads them.
 - **ESPHome checks run on the build server** (CT 117 `esphome-builder` on
   pve_rptu_dev), never locally as long as pve_rptu_dev is reachable (owner,
   2026-10-14): `bash ../claude-setup/scripts/esphome-check.sh esphome/xteink-x4.yaml`
