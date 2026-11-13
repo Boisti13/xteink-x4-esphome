@@ -8,7 +8,9 @@
 #
 # Needs in /config/secrets.yaml (see README → Install):
 #   sprout_track_auth:           "Bearer st_live_…"
-#   sprout_track_status_url:     "http://<host>:3000/api/hooks/v1/babies/<baby-id>/status"
+#   sprout_track_status_url:     "http://<host>:3000/api/hooks/v1/babies/<baby-id>/status?timezone=Europe/Berlin"
+#     (your own time zone: Sprout Track counts "today" in it; without it
+#     the server's zone, often UTC, so the day starts at 01:00/02:00)
 #   sprout_track_medicine_url:   "…/babies/<baby-id>/activities?type=medicine&limit=20"
 #   sprout_track_supplement_url: "…/babies/<baby-id>/activities?type=supplement&limit=20"
 #   sprout_track_medicines_url:  "…/babies/<baby-id>/reference?type=medicines"

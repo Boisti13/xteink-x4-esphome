@@ -18,4 +18,10 @@
   same ESPHome as Home Assistant's app. Only if pve_rptu_dev is unreachable,
   validate locally with a venv outside the Drive folder. The owner compiles
   and flashes through the ESPHome app in Home Assistant.
+- **Push and copy to Home Assistant without asking once the compile check
+  passes** (owner, 2026-10-29): commit, push `dev`, back up HA's copy of the
+  ESPHome files to `/config/project-backups/esphome/<file>.bak-<timestamp>`,
+  copy the new ones into `/homeassistant/esphome/` and check they match.
+  If HA's copy has changes the repo doesn't, ask first. Still ask before
+  flashing, releases, and changes to the HA package (`/config/packages/xteink_x4.yaml`) or anything else in HA.
 - Public repo: no secrets, IPs or personal entity names in committed files.

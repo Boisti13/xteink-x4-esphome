@@ -2,6 +2,13 @@
 
 All notable changes, newest first. Versions follow [semantic versioning](https://semver.org/); each release is tagged `vX.Y.Z` on `main`.
 
+## Unreleased
+
+## v0.5.1 — 2026-11-13
+
+### Fixed
+- **"Today" started at 01:00 (02:00 in summer)**: the wet/dirty counts and sleep today were counted in the Sprout Track server's time zone, often UTC, because the status request sent none. Add `?timezone=<your zone>` to `sprout_track_status_url` in `secrets.yaml` (see README → Install); nothing else changes.
+
 ## v0.5.0 — 2026-10-25
 
 ### Added

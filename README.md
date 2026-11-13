@@ -82,11 +82,16 @@ Track address, baby ID and API key):
 
 ```yaml
 sprout_track_auth: "Bearer st_live_…"
-sprout_track_status_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/status"
+sprout_track_status_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/status?timezone=Europe/Berlin"
 sprout_track_medicine_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=medicine&limit=20"
 sprout_track_supplement_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/activities?type=supplement&limit=20"
 sprout_track_medicines_url: "http://192.168.1.50:3000/api/hooks/v1/babies/<baby-id>/reference?type=medicines"
 ```
+
+Put your own time zone (as in *Settings → System → General*) after
+`timezone=`. Sprout Track counts *today* (wet and dirty diapers, sleep) in
+that zone; without it the server's zone is used, which is often UTC, so the
+day would start at 01:00 or 02:00 local time.
 
 The *next* times need the minimum time between doses (`doseMinTime`) in that
 last answer. Sprout Track's hooks API doesn't return it yet (reported
