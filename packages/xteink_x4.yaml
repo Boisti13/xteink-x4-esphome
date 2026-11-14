@@ -128,7 +128,7 @@ template:
             {{ (t | as_local).strftime('%H:%M') if t else '' }}
           type: >
             {% set d = state_attr('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_diaper', 'diaper_type') %}
-            {{ {'WET': 'wet', 'DIRTY': 'dirty', 'BOTH': 'wet + dirty'}.get(d, '') }}
+            {{ {'WET': 'wet', 'DIRTY': 'dirty', 'BOTH': 'wet + dirty'}.get((d or '') | upper, '') }}
           wet: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_wet_diapers_today') | int(0) }}"
           dirty: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_dirty_diapers_today') | int(0) }}"
 

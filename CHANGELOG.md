@@ -4,6 +4,11 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 
 ## Unreleased
 
+## v0.6.1 — 2026-11-14
+
+### Fixed
+- **Diaper type with the Sprout Track integration v0.5.0**: it sends the diaper type as `wet` / `dirty` / `both` instead of `WET` / `DIRTY` / `BOTH`; the package now reads either, so the last diaper's type keeps showing after the integration update. No new firmware.
+
 ## v0.6.0 — 2026-11-13
 
 ### Changed
