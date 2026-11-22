@@ -196,24 +196,23 @@ template:
         minutes: "/5"
       - trigger: homeassistant
         event: start
-    variables:
-      dirty_last: >
-        {% set prev = this.attributes.last | default(none) | as_datetime(none) if this is defined and this.attributes is defined else none %}
-        {% if trigger.id == 'set' %}
-          {% set t = trigger.event.data.time | default(none) | as_datetime(none) %}
-          {{ (t.isoformat() if t else (prev.isoformat() if prev else '')) }}
-        {% else %}
-          {% set b = states('sensor.xteink_x4_baby') %}
-          {% set d = (state_attr('sensor.' ~ b ~ '_last_diaper', 'diaper_type') or '') | lower %}
-          {% set t = states('sensor.' ~ b ~ '_last_diaper') | as_datetime(none) if d in ['dirty', 'both'] else none %}
-          {% if t and (not prev or t > prev) %}{{ t.isoformat() }}{% elif prev %}{{ prev.isoformat() }}{% endif %}
-        {% endif %}
     sensor:
       - name: "Xteink X4 Dirty diaper"
         unique_id: xteink_x4_dirty_diaper
         icon: mdi:emoticon-poop
+        # Both templates work out the same timestamp: the newer of the one
+        # remembered (attribute last) and the last diaper if it was dirty;
+        # the event sets it outright.
         state: >
-          {% set t = dirty_last | as_datetime(none) %}
+          {% set prev = this.attributes.get('last', '') | as_datetime(none) %}
+          {% set b = states('sensor.xteink_x4_baby') %}
+          {% set d = (state_attr('sensor.' ~ b ~ '_last_diaper', 'diaper_type') or '') | lower %}
+          {% set seen = states('sensor.' ~ b ~ '_last_diaper') | as_datetime(none) if d in ['dirty', 'both'] else none %}
+          {% if trigger.id == 'set' %}
+            {% set t = trigger.event.data.get('time', '') | as_datetime(none) or prev %}
+          {% else %}
+            {% set t = seen if seen and (not prev or seen > prev) else prev %}
+          {% endif %}
           {% if t %}
             {% set t = t | as_local %}
             {% set days = (now().date() - t.date()).days %}
@@ -224,4 +223,14 @@ template:
             unknown
           {% endif %}
         attributes:
-          last: "{{ dirty_last }}"
+          last: >
+            {% set prev = this.attributes.get('last', '') | as_datetime(none) %}
+            {% set b = states('sensor.xteink_x4_baby') %}
+            {% set d = (state_attr('sensor.' ~ b ~ '_last_diaper', 'diaper_type') or '') | lower %}
+            {% set seen = states('sensor.' ~ b ~ '_last_diaper') | as_datetime(none) if d in ['dirty', 'both'] else none %}
+            {% if trigger.id == 'set' %}
+              {% set t = trigger.event.data.get('time', '') | as_datetime(none) or prev %}
+            {% else %}
+              {% set t = seen if seen and (not prev or seen > prev) else prev %}
+            {% endif %}
+            {{ t.isoformat() if t else '' }}
