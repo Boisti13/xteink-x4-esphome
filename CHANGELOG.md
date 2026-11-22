@@ -5,7 +5,7 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ## Unreleased
 
 ### Added
-- **Last dirty diaper** under the wet/dirty counts: *today 14:20*, *yesterday* or *3 days ago* (dirty or wet + dirty). New package sensor `sensor.xteink_x4_dirty_diaper`, which remembers the newest dirty diaper it sees (kept across restarts); fill it in once with the event `xteink_x4_set_last_dirty_diaper` (see README → Home Assistant entities). `sensor.xteink_x4_diaper` gets the attribute `last` (timestamp). Needs the new package and new firmware; in portrait the medicine and supplement lists move down a line.
+- **Last dirty diaper** under the wet/dirty counts: *today 14:20*, *yesterday* or *3 days ago* (dirty or wet + dirty). New package sensor `sensor.xteink_x4_dirty_diaper` from the integration's *Last dirty diaper*. **Needs the Sprout Track integration v0.6.0**, the new package and new firmware; in portrait the medicine and supplement lists move down a line.
 
 ## v0.6.1 — 2026-11-14
 

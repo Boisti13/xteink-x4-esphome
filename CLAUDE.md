@@ -11,7 +11,7 @@
   one file, no UI helpers, nothing in `configuration.yaml`. Entity IDs start
   with `xteink_x4_`.
 - **Sprout Track data comes from the integration**
-  ([ha-sprout-track](https://github.com/Boisti13/ha-sprout-track), v0.2.0+),
+  ([ha-sprout-track](https://github.com/Boisti13/ha-sprout-track), v0.6.0+),
   not from the API (since v0.6.0): templates read `sensor.<baby>_*` with the
   baby from `sensor.xteink_x4_baby`. No API URLs or keys in the package.
   Keep the `sensor.xteink_x4_*` names and formats: the firmware reads them.

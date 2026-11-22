@@ -6,7 +6,7 @@
 # It turns the entities of the Sprout Track integration into display-ready
 # sensors; the device reads them (esphome/xteink_x4_modules/text_sensors.yaml).
 #
-# Needs the Sprout Track integration for Home Assistant, v0.2.0 or newer
+# Needs the Sprout Track integration for Home Assistant, v0.6.0 or newer
 # (https://github.com/Boisti13/ha-sprout-track, see README → Install).
 # The dashboard shows the integration's first baby; with several babies,
 # put the name in `pick` in "Xteink X4 Baby" below.
@@ -109,8 +109,7 @@ template:
             {{ (t | as_local).strftime('%H:%M') if t else '' }}
 
       # State: time since the last diaper as H:MM.
-      # Attributes: time, type, last (timestamp), wet and dirty today
-      # (wet-and-dirty counts in both).
+      # Attributes: time, type, wet and dirty today (wet-and-dirty counts in both).
       - name: "Xteink X4 Diaper"
         unique_id: xteink_x4_diaper
         icon: mdi:human-baby-changing-table
@@ -130,10 +129,22 @@ template:
           type: >
             {% set d = state_attr('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_diaper', 'diaper_type') %}
             {{ {'WET': 'wet', 'DIRTY': 'dirty', 'BOTH': 'wet + dirty'}.get((d or '') | upper, '') }}
-          # The last diaper's time as an ISO timestamp, for "Xteink X4 Dirty diaper"
-          last: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_diaper') }}"
           wet: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_wet_diapers_today') | int(0) }}"
           dirty: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_dirty_diapers_today') | int(0) }}"
+
+      # Last dirty (or wet + dirty) diaper: "today 14:20", "yesterday",
+      # "3 days ago". Needs the integration's Last dirty diaper sensor (v0.6.0).
+      - name: "Xteink X4 Dirty diaper"
+        unique_id: xteink_x4_dirty_diaper
+        icon: mdi:emoticon-poop
+        availability: >
+          {{ has_value('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_dirty_diaper') }}
+        state: >
+          {% set t = states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_dirty_diaper') | as_datetime | as_local %}
+          {% set days = (now().date() - t.date()).days %}
+          {% if days <= 0 %}today {{ t.strftime('%H:%M') }}
+          {% elif days == 1 %}yesterday
+          {% else %}{{ days }} days ago{% endif %}
 
       # State: doses today (since midnight). Attribute lines: one per
       # medicine given in the last 24 hours, its latest dose, newest first:
@@ -176,61 +187,3 @@ template:
               {% set ns.lines = ns.lines + [(as_datetime(d.time) | as_local).strftime('%H:%M') ~ '|' ~ d.name ~ '|' ~ (d.amount | string) ~ ' ' ~ u] %}
             {% endfor %}
             {{ ns.lines | join('\n') }}
-
-  # Last dirty diaper (dirty or wet + dirty): "today 14:20", "yesterday",
-  # "3 days ago". The integration only knows the last diaper of any kind, so
-  # this sensor remembers the newest dirty one it has seen (kept across
-  # restarts). It starts out unknown; to fill it in right away, fire the
-  # event xteink_x4_set_last_dirty_diaper with data
-  #   time: "2026-11-21T08:15:00+01:00"
-  # (Developer tools → Events). Attribute last: the timestamp.
-  - triggers:
-      - trigger: state
-        entity_id: sensor.xteink_x4_diaper
-        attribute: last
-      - trigger: event
-        event_type: xteink_x4_set_last_dirty_diaper
-        id: set
-      # Keeps "today" / "yesterday" right after midnight
-      - trigger: time_pattern
-        minutes: "/5"
-      - trigger: homeassistant
-        event: start
-    sensor:
-      - name: "Xteink X4 Dirty diaper"
-        unique_id: xteink_x4_dirty_diaper
-        icon: mdi:emoticon-poop
-        # Both templates work out the same timestamp: the newer of the one
-        # remembered (attribute last) and the last diaper if it was dirty;
-        # the event sets it outright.
-        state: >
-          {% set prev = this.attributes.get('last', '') | as_datetime(none) %}
-          {% set b = states('sensor.xteink_x4_baby') %}
-          {% set d = (state_attr('sensor.' ~ b ~ '_last_diaper', 'diaper_type') or '') | lower %}
-          {% set seen = states('sensor.' ~ b ~ '_last_diaper') | as_datetime(none) if d in ['dirty', 'both'] else none %}
-          {% if trigger.id == 'set' %}
-            {% set t = trigger.event.data.get('time', '') | as_datetime(none) or prev %}
-          {% else %}
-            {% set t = seen if seen and (not prev or seen > prev) else prev %}
-          {% endif %}
-          {% if t %}
-            {% set t = t | as_local %}
-            {% set days = (now().date() - t.date()).days %}
-            {% if days <= 0 %}today {{ t.strftime('%H:%M') }}
-            {% elif days == 1 %}yesterday
-            {% else %}{{ days }} days ago{% endif %}
-          {% else %}
-            unknown
-          {% endif %}
-        attributes:
-          last: >
-            {% set prev = this.attributes.get('last', '') | as_datetime(none) %}
-            {% set b = states('sensor.xteink_x4_baby') %}
-            {% set d = (state_attr('sensor.' ~ b ~ '_last_diaper', 'diaper_type') or '') | lower %}
-            {% set seen = states('sensor.' ~ b ~ '_last_diaper') | as_datetime(none) if d in ['dirty', 'both'] else none %}
-            {% if trigger.id == 'set' %}
-              {% set t = trigger.event.data.get('time', '') | as_datetime(none) or prev %}
-            {% else %}
-              {% set t = seen if seen and (not prev or seen > prev) else prev %}
-            {% endif %}
-            {{ t.isoformat() if t else '' }}
