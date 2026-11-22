@@ -63,7 +63,8 @@ display:
       }
 
       // One "HH:MM|name|right" list (medicine or supplements) in the column
-      // x0..x1; returns the next y. Landscape uses a smaller font for the
+      // x0..x1, at most max_lines and only as many as fit above bottom
+      // (with room for the "…" when some are left out); returns the next y. Landscape uses a smaller font for the
       // entries, so names fit into the narrower column. right is the dose
       // for supplements; for medicine (next_col) it is when the next dose
       // is allowed ("11:12", "now" or empty), in bold under a "next" label.
@@ -74,7 +75,7 @@ display:
       esphome::font::Font *HEAD_FONT = LANDSCAPE ? id(font_section) : id(font_label);
       const int HEAD_Y = LANDSCAPE ? 4 : 6;
       const int HEAD_H = LANDSCAPE ? 54 : 52;
-      auto section_list = [&](int x0, int x1, int y, int max_lines, esphome::image::Image *icon,
+      auto section_list = [&](int x0, int x1, int y, int bottom, int max_lines, esphome::image::Image *icon,
                               const char *title, esphome::text_sensor::TextSensor *count,
                               esphome::text_sensor::TextSensor *lines, bool next_col) -> int {
         it.image(x0, y, icon);
@@ -103,6 +104,16 @@ display:
         }
         esphome::font::Font *RIGHT_FONT = next_col ? id(font_label) : LIST_FONT;
         const int RIGHT_DY = next_col ? (LANDSCAPE ? 1 : 2) : 0;
+        int total = 0;
+        for (size_t p = 0; p <= all.size();) {
+          size_t e = all.find('\n', p);
+          if (e == std::string::npos) e = all.size();
+          if (e > p) total++;
+          p = e + 1;
+        }
+        int fits = (bottom - y) / LIST_LINE;
+        if (total > fits) fits = (bottom - y - 26) / LIST_LINE;
+        max_lines = std::max(1, std::min(max_lines, fits));
         if (all.empty()) {
           it.print(x0, y, LIST_FONT, "None today");
           return y + LIST_LINE + 6;
@@ -169,6 +180,10 @@ display:
         it.printf(CX + 44, y, id(font_title), "%s wet", or_dash(val(id(ha_diaper_wet))).c_str());
         it.image(CX + 170, y, id(icon_dirty));
         it.printf(CX + 214, y, id(font_title), "%s dirty", or_dash(val(id(ha_diaper_dirty))).c_str());
+        // When the last dirty one was: "today 14:20", "yesterday", "3 days ago"
+        y += 48;
+        it.print(CX, y + 4, id(font_label), "Last dirty");
+        it.print(x1, y, id(font_title), TextAlign::TOP_RIGHT, or_dash(val(id(ha_diaper_last_dirty))).c_str());
       };
 
       // ---- Header -----------------------------------------------------
@@ -190,18 +205,18 @@ display:
         const int MID = 360;
         section_sleep_diaper(M, MID - 20, 80);
         it.line(MID, 80, MID, H - 60);
-        int y = section_list(MID + 20, W - M, 80, 3, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
+        int y = section_list(MID + 20, W - M, 80, H, 3, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
         it.line(MID + 20, y, W - M, y);
         // As many supplement lines as still fit above the footer
-        int room = std::max(1, (H - 60 - (y + 16 + HEAD_H)) / LIST_LINE);
-        section_list(MID + 20, W - M, y + 16, std::min(3, room), id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
+        section_list(MID + 20, W - M, y + 16, H - 48, 3, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
       } else {
         // One column, top to bottom
         section_sleep_diaper(M, W - M, 80);
-        rule(378);
-        int y = section_list(M, W - M, 394, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
+        rule(426);
+        int y = section_list(M, W - M, 442, H, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
         rule(y);
-        section_list(M, W - M, y + 16, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
+        // As many supplement lines as still fit above the footer
+        section_list(M, W - M, y + 16, H - 48, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
       }
 
       // ---- Footer: last update, battery and charging; a black bar when

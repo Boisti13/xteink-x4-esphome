@@ -9,7 +9,7 @@ Turn the **Xteink X4**, a pocket e-reader (ESP32-C3, 4.26" 800×480
 e-paper), into a baby dashboard for the nursery or the fridge door. It shows
 what [Sprout Track](https://github.com/Oak-and-Sprout/sprout-track) knows at
 a glance: how long the baby has been awake (or asleep), when the last diaper
-was changed, how many were wet or dirty today, and which medicine and
+was changed, how many were wet or dirty today, when the last dirty one was, and which medicine and
 supplements were given when. [Home Assistant](https://www.home-assistant.io/)
 fetches the data; the X4 runs [ESPHome](https://esphome.io/), wakes once an
 hour during the day, draws the page and sleeps again — about a week on one charge.
@@ -20,6 +20,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 
 - **Awake for / asleep for** with the time it started — at a glance whether a nap is due
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
+- **Last dirty diaper**: *today 14:20*, *yesterday* or *3 days ago*
 - **Medicine: when the next dose is allowed**: one line per medicine given in the last 24 hours — its latest dose and, under *next*, the time the next dose may be given (or **now**), from the minimum time between doses set in Sprout Track; so nobody gives a dose too early
 - **Supplements today**: every dose with time, name and amount, and how many
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
@@ -79,7 +80,7 @@ a running [Sprout Track](https://github.com/Oak-and-Sprout/sprout-track), an
 Xteink X4 and a USB-C cable.
 
 **1. Sprout Track integration.** Install
-[ha-sprout-track](https://github.com/Boisti13/ha-sprout-track) (v0.2.0 or
+[ha-sprout-track](https://github.com/Boisti13/ha-sprout-track) (v0.6.0 or
 newer) through HACS and set it up with your Sprout Track address and an API
 key — its README has the steps. The dashboard shows the integration's first
 baby; with several babies, put the name in `pick` in *Xteink X4 Baby* in the
@@ -136,6 +137,7 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_outdoor` | outside temperature, *16.5°* — from `sensor.virtual_outdoor_temperature`; point it at your own outdoor sensor | |
 | `sensor.xteink_x4_sleep` | awake/asleep for, `H:MM` | `label` (*Awake for* / *Asleep for*), `since` (`HH:MM`) |
 | `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `wet`, `dirty` (today) |
+| `sensor.xteink_x4_dirty_diaper` | last dirty (or wet + dirty) diaper: *today 14:20*, *yesterday*, *3 days ago* — from the integration's *Last dirty diaper* | |
 | `sensor.xteink_x4_medicine` | doses today | `lines`: one per medicine given in the last 24 h, its latest dose, newest first, `HH:MM\|name\|next` (next dose allowed at `HH:MM`, `now`, or empty without a minimum time) |
 | `sensor.xteink_x4_supplements` | doses today | `lines`: one per dose today, newest first, `HH:MM\|name\|amount` |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
@@ -202,6 +204,7 @@ esphome/
   xteink-x4.yaml              # device config, wake cycle, deep sleep
   xteink_x4_partitions.csv    # 16 MB flash layout
   secrets.example.yaml
+  screenshot-demo.yaml        # the page on a PC (SDL, made-up values) for the previews
   xteink_x4_modules/
     display.yaml              # the page (lambda)
     fonts.yaml / images.yaml  # Roboto, Material Design Icons
@@ -212,6 +215,8 @@ esphome/
     power.h                   # power latch and switching off, SD card idle, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
+scripts/
+  screenshots.sh              # renders docs/preview*.png
 docs/
   preview.png / preview-landscape.png / footer-states.png
 ```
@@ -226,6 +231,12 @@ without a device:
 ```bash
 esphome config esphome/xteink-x4.yaml
 ```
+
+The previews in this README come from the device's own page code: on
+Linux (ESPHome, `libsdl2-dev`, `xvfb`, `imagemagick`),
+`bash scripts/screenshots.sh` builds `esphome/screenshot-demo.yaml` for the
+PC with made-up values and saves `docs/preview-landscape.png` and
+`docs/preview.png`. Run it after every change to the page.
 
 ## License
 

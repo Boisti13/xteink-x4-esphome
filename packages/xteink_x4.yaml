@@ -6,7 +6,7 @@
 # It turns the entities of the Sprout Track integration into display-ready
 # sensors; the device reads them (esphome/xteink_x4_modules/text_sensors.yaml).
 #
-# Needs the Sprout Track integration for Home Assistant, v0.2.0 or newer
+# Needs the Sprout Track integration for Home Assistant, v0.6.0 or newer
 # (https://github.com/Boisti13/ha-sprout-track, see README → Install).
 # The dashboard shows the integration's first baby; with several babies,
 # put the name in `pick` in "Xteink X4 Baby" below.
@@ -131,6 +131,20 @@ template:
             {{ {'WET': 'wet', 'DIRTY': 'dirty', 'BOTH': 'wet + dirty'}.get((d or '') | upper, '') }}
           wet: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_wet_diapers_today') | int(0) }}"
           dirty: "{{ states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_dirty_diapers_today') | int(0) }}"
+
+      # Last dirty (or wet + dirty) diaper: "today 14:20", "yesterday",
+      # "3 days ago". Needs the integration's Last dirty diaper sensor (v0.6.0).
+      - name: "Xteink X4 Dirty diaper"
+        unique_id: xteink_x4_dirty_diaper
+        icon: mdi:emoticon-poop
+        availability: >
+          {{ has_value('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_dirty_diaper') }}
+        state: >
+          {% set t = states('sensor.' ~ states('sensor.xteink_x4_baby') ~ '_last_dirty_diaper') | as_datetime | as_local %}
+          {% set days = (now().date() - t.date()).days %}
+          {% if days <= 0 %}today {{ t.strftime('%H:%M') }}
+          {% elif days == 1 %}yesterday
+          {% else %}{{ days }} days ago{% endif %}
 
       # State: doses today (since midnight). Attribute lines: one per
       # medicine given in the last 24 hours, its latest dose, newest first:
