@@ -9,7 +9,7 @@ Turn the **Xteink X4**, a pocket e-reader (ESP32-C3, 4.26" 800×480
 e-paper), into a baby dashboard for the nursery or the fridge door. It shows
 what [Sprout Track](https://github.com/Oak-and-Sprout/sprout-track) knows at
 a glance: how long the baby has been awake (or asleep), when the last diaper
-was changed, how many were wet or dirty today, and which medicine and
+was changed, how many were wet or dirty today, when the last dirty one was, and which medicine and
 supplements were given when. [Home Assistant](https://www.home-assistant.io/)
 fetches the data; the X4 runs [ESPHome](https://esphome.io/), wakes once an
 hour during the day, draws the page and sleeps again — about a week on one charge.
@@ -20,6 +20,7 @@ hour during the day, draws the page and sleeps again — about a week on one cha
 
 - **Awake for / asleep for** with the time it started — at a glance whether a nap is due
 - **Last diaper**: how long ago, at what time, wet or dirty; **wet and dirty today** (a "wet + dirty" one counts for both)
+- **Last dirty diaper**: *today 14:20*, *yesterday* or *3 days ago*
 - **Medicine: when the next dose is allowed**: one line per medicine given in the last 24 hours — its latest dose and, under *next*, the time the next dose may be given (or **now**), from the minimum time between doses set in Sprout Track; so nobody gives a dose too early
 - **Supplements today**: every dose with time, name and amount, and how many
 - **Battery-friendly**: wakes on the full hour, draws once, deep sleep in between; **no wakes at night** (23:00–6:00, adjustable); the **power button** wakes it for a fresh page at any time
@@ -135,7 +136,8 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_header` | *Emma · Wed, 7 Oct* | |
 | `sensor.xteink_x4_outdoor` | outside temperature, *16.5°* — from `sensor.virtual_outdoor_temperature`; point it at your own outdoor sensor | |
 | `sensor.xteink_x4_sleep` | awake/asleep for, `H:MM` | `label` (*Awake for* / *Asleep for*), `since` (`HH:MM`) |
-| `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `wet`, `dirty` (today) |
+| `sensor.xteink_x4_diaper` | since the last diaper, `H:MM` | `time`, `type` (*wet*, *dirty*, *wet + dirty*), `last` (timestamp), `wet`, `dirty` (today) |
+| `sensor.xteink_x4_dirty_diaper` | last dirty (or wet + dirty) diaper: *today 14:20*, *yesterday*, *3 days ago* — remembered by the package, see below | `last` (timestamp) |
 | `sensor.xteink_x4_medicine` | doses today | `lines`: one per medicine given in the last 24 h, its latest dose, newest first, `HH:MM\|name\|next` (next dose allowed at `HH:MM`, `now`, or empty without a minimum time) |
 | `sensor.xteink_x4_supplements` | doses today | `lines`: one per dose today, newest first, `HH:MM\|name\|amount` |
 | `input_boolean.xteink_x4_keep_awake` | on = don't sleep | |
@@ -144,6 +146,12 @@ the device goes back to sleep at once.
 | `sensor.xteink_x4_baby` | the baby shown: the start of its entity IDs (`emma`) | |
 
 "Today" is since midnight in Home Assistant's time zone.
+
+The integration only reports the last diaper of any kind, so
+`sensor.xteink_x4_dirty_diaper` remembers the newest dirty one it sees and
+starts out *unknown*. To fill it in at once, fire the event
+`xteink_x4_set_last_dirty_diaper` with the time of the last dirty diaper
+(*Developer tools → Events*, data `time: "2026-11-20T18:47:00+01:00"`).
 
 **From the device**: `sensor.xteink_x4_battery` (%), `sensor.xteink_x4_battery_voltage` (V), `sensor.xteink_x4_wi_fi_signal`,
 `sensor.xteink_x4_wake_connected_after` and `sensor.xteink_x4_wake_total` (seconds per wake),

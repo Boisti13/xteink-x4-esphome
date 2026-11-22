@@ -42,6 +42,10 @@ text_sensor:
     id: ha_diaper_dirty
     entity_id: sensor.xteink_x4_diaper
     attribute: dirty
+  # Last dirty diaper: "today 14:20", "yesterday", "3 days ago"
+  - platform: homeassistant
+    id: ha_diaper_last_dirty
+    entity_id: sensor.xteink_x4_dirty_diaper
 
   # Medicine and supplements: count today, lines "HH:MM|name|dose"
   - platform: homeassistant

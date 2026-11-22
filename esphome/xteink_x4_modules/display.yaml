@@ -169,6 +169,10 @@ display:
         it.printf(CX + 44, y, id(font_title), "%s wet", or_dash(val(id(ha_diaper_wet))).c_str());
         it.image(CX + 170, y, id(icon_dirty));
         it.printf(CX + 214, y, id(font_title), "%s dirty", or_dash(val(id(ha_diaper_dirty))).c_str());
+        // When the last dirty one was: "today 14:20", "yesterday", "3 days ago"
+        y += 48;
+        it.print(CX, y + 4, id(font_label), "Last dirty");
+        it.print(x1, y, id(font_title), TextAlign::TOP_RIGHT, or_dash(val(id(ha_diaper_last_dirty))).c_str());
       };
 
       // ---- Header -----------------------------------------------------
@@ -198,8 +202,8 @@ display:
       } else {
         // One column, top to bottom
         section_sleep_diaper(M, W - M, 80);
-        rule(378);
-        int y = section_list(M, W - M, 394, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
+        rule(426);
+        int y = section_list(M, W - M, 442, 5, id(icon_medicine), "Medicine", id(ha_medicine), id(ha_medicine_lines), true);
         rule(y);
         section_list(M, W - M, y + 16, 5, id(icon_supplement), "Supplements", id(ha_supplements), id(ha_supplements_lines), false);
       }
