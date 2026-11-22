@@ -204,6 +204,7 @@ esphome/
   xteink-x4.yaml              # device config, wake cycle, deep sleep
   xteink_x4_partitions.csv    # 16 MB flash layout
   secrets.example.yaml
+  screenshot-demo.yaml        # the page on a PC (SDL, made-up values) for the previews
   xteink_x4_modules/
     display.yaml              # the page (lambda)
     fonts.yaml / images.yaml  # Roboto, Material Design Icons
@@ -214,6 +215,8 @@ esphome/
     power.h                   # power latch and switching off, SD card idle, time to the next wake
 packages/
   xteink_x4.yaml              # everything on the Home Assistant side
+scripts/
+  screenshots.sh              # renders docs/preview*.png
 docs/
   preview.png / preview-landscape.png / footer-states.png
 ```
@@ -228,6 +231,12 @@ without a device:
 ```bash
 esphome config esphome/xteink-x4.yaml
 ```
+
+The previews in this README come from the device's own page code: on
+Linux (ESPHome, `libsdl2-dev`, `xvfb`, `imagemagick`),
+`bash scripts/screenshots.sh` builds `esphome/screenshot-demo.yaml` for the
+PC with made-up values and saves `docs/preview-landscape.png` and
+`docs/preview.png`. Run it after every change to the page.
 
 ## License
 

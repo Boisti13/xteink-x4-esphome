@@ -7,6 +7,12 @@ All notable changes, newest first. Versions follow [semantic versioning](https:/
 ### Added
 - **Last dirty diaper** under the wet/dirty counts: *today 14:20*, *yesterday* or *3 days ago* (dirty or wet + dirty). New package sensor `sensor.xteink_x4_dirty_diaper` from the integration's *Last dirty diaper*. **Needs the Sprout Track integration v0.6.0**, the new package and new firmware; in portrait the medicine and supplement lists move down a line.
 
+### Fixed
+- **Portrait: a long supplement list ran into the footer.** Both lists now show only as many lines as fit above the footer (with room for the "…" when some are left out), in portrait as in landscape.
+
+### Under the hood
+- `scripts/screenshots.sh` renders the README previews on a PC from the device's own page code (`esphome/screenshot-demo.yaml`, ESPHome host + SDL, made-up values); previews updated.
+
 ## v0.6.1 — 2026-11-14
 
 ### Fixed

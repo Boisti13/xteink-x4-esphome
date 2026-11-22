@@ -1,0 +1,111 @@
+# The dashboard on a PC: the device's own drawing code (spliced in from
+# xteink_x4_modules/display.yaml by scripts/screenshots.sh), an SDL window
+# instead of the e-paper, made-up values instead of Home Assistant. Used for
+# the README previews; handy for trying out layout changes without waking
+# and flashing the X4. Not for the device — don't copy it into Home
+# Assistant's ESPHome folder.
+#
+#   bash scripts/screenshots.sh     # Linux: ESPHome, libsdl2-dev, xvfb, imagemagick
+#
+# Landscape at boot, portrait 3 s later. SDL draws COLOR_ON white on black;
+# the script inverts the PNGs so they look like the e-paper.
+
+substitutions:
+  landscape_rotation: "0"
+  # The window stays 800×480; the script turns the portrait shot upright
+  portrait_rotation: "270"
+  battery_warning: "15"
+
+esphome:
+  name: xteink-x4-demo
+  friendly_name: Xteink X4 Demo
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          id(ha_header).publish_state("Emma · Wed, 7 Oct");
+          id(ha_outdoor).publish_state("16.5°");
+          id(ha_sleep).publish_state("0:56");
+          id(ha_sleep_label).publish_state("Asleep for");
+          id(ha_sleep_since).publish_state("19:50");
+          id(ha_diaper).publish_state("1:18");
+          id(ha_diaper_time).publish_state("19:27");
+          id(ha_diaper_type).publish_state("wet");
+          id(ha_diaper_wet).publish_state("6");
+          id(ha_diaper_dirty).publish_state("2");
+          id(ha_diaper_last_dirty).publish_state("yesterday");
+          id(ha_medicine).publish_state("3");
+          id(ha_medicine_lines).publish_state(
+            "19:35|Oral Pain Relief - Night|23:35\n"
+            "13:05|Paracetamol Saft|now\n"
+            "07:10|Oral Pain Relief - Day|now");
+          id(ha_supplements).publish_state("2");
+          id(ha_supplements_lines).publish_state(
+            "19:33|DeVit|6 drops\n"
+            "08:10|Vitamin D3 + K2 Kindertropfen|1 drop");
+          id(wake_mode).publish_state("Hourly");
+          id(battery_level).publish_state(87);
+      - component.update: epaper_display
+
+host:
+
+logger:
+  level: INFO
+
+time:
+  - platform: host
+    id: ha_time
+    timezone: Europe/Berlin
+
+packages:
+  fonts: !include xteink_x4_modules/fonts.yaml
+  images: !include xteink_x4_modules/images.yaml
+  # Written by scripts/screenshots.sh from xteink_x4_modules/display.yaml
+  display: !include .esphome/demo-display.yaml
+
+globals:
+  - id: setup_screen
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: demo_landscape
+    type: bool
+    restore_value: no
+    initial_value: "true"
+
+interval:
+  - interval: 3s
+    then:
+      - lambda: "id(demo_landscape) = !id(demo_landscape);"
+      - component.update: epaper_display
+
+binary_sensor:
+  - platform: template
+    id: landscape
+    lambda: "return id(demo_landscape);"
+  - platform: template
+    id: usb_power
+    lambda: "return false;"
+
+sensor:
+  - platform: template
+    id: battery_level
+    update_interval: never
+
+text_sensor:
+  - { platform: template, id: ha_header, update_interval: never }
+  - { platform: template, id: ha_outdoor, update_interval: never }
+  - { platform: template, id: ha_sleep, update_interval: never }
+  - { platform: template, id: ha_sleep_label, update_interval: never }
+  - { platform: template, id: ha_sleep_since, update_interval: never }
+  - { platform: template, id: ha_diaper, update_interval: never }
+  - { platform: template, id: ha_diaper_time, update_interval: never }
+  - { platform: template, id: ha_diaper_type, update_interval: never }
+  - { platform: template, id: ha_diaper_wet, update_interval: never }
+  - { platform: template, id: ha_diaper_dirty, update_interval: never }
+  - { platform: template, id: ha_diaper_last_dirty, update_interval: never }
+  - { platform: template, id: ha_medicine, update_interval: never }
+  - { platform: template, id: ha_medicine_lines, update_interval: never }
+  - { platform: template, id: ha_supplements, update_interval: never }
+  - { platform: template, id: ha_supplements_lines, update_interval: never }
+  - { platform: template, id: wake_mode, update_interval: never }
